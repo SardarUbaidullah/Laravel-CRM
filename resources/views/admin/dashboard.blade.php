@@ -1,688 +1,838 @@
 @extends('admin.layouts.app')
 @section('content')
 
-            <!-- Header -->
+<!-- Dashboard Content -->
+<!-- System Alert -->
+<div id="systemAlert" class="hidden mb-6 p-4 rounded-lg border bg-primary border-primary text-white slide-in">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+            <i class="fas fa-check-circle"></i>
+            <span class="font-medium" id="alertMessage">User created successfully!</span>
+        </div>
+        <button onclick="hideAlert()" class="hover:opacity-70 transition-opacity">
+            <i class="fas fa-times-circle"></i>
+        </button>
+    </div>
+</div>
 
+<!-- Header -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between mb-8">
+    <div>
+        <div class="flex items-center space-x-3 mb-2">
+            <i class="fas fa-shield-alt text-primary text-2xl"></i>
+            <h1 class="text-3xl font-bold text-black">System Administration</h1>
+        </div>
+        <p class="text-gray-600">
+            Monitor system health, manage users, and configure platform settings
+        </p>
+    </div>
 
-            <!-- Dashboard Content -->
-                <!-- System Alert -->
-                <div id="systemAlert" class="hidden mb-6 p-4 rounded-lg border bg-primary border-primary text-white slide-in">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-2">
-                            <i class="fas fa-check-circle"></i>
-                            <span class="font-medium" id="alertMessage">User created successfully!</span>
+    <div class="flex items-center space-x-4 mt-4 lg:mt-0">
+        <div class="relative">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="Search users, logs..."
+                class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-64 bg-white"
+            />
+        </div>
+
+        <button
+            id="clearCacheBtn"
+            class="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-[#9a8874] transition-colors font-medium flex items-center space-x-2"
+        >
+            <i class="fas fa-sync-alt"></i>
+            <span>Clear Cache</span>
+        </button>
+    </div>
+</div>
+
+<!-- Navigation Tabs -->
+<div class="flex space-x-1 bg-white rounded-lg p-1 border border-gray-200 mb-8">
+    <button
+        data-tab="overview"
+        class="tab-btn flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors bg-primary text-white"
+    >
+        Overview
+    </button>
+    <button
+        data-tab="users"
+        class="tab-btn flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-black hover:bg-gray-100"
+    >
+        Users
+    </button>
+    <button
+        data-tab="projects"
+        class="tab-btn flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-black hover:bg-gray-100"
+    >
+        Projects
+    </button>
+    <button
+        data-tab="tasks"
+        class="tab-btn flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-black hover:bg-gray-100"
+    >
+        Tasks
+    </button>
+    <button
+        data-tab="files"
+        class="tab-btn flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-black hover:bg-gray-100"
+    >
+        Files
+    </button>
+</div>
+
+<!-- Overview Tab -->
+<div id="overviewTab" class="tab-content space-y-8">
+    <!-- System Stats -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Users</p>
+                    <p class="text-2xl font-bold text-black">{{ \App\Models\User::count() }}</p>
+                </div>
+                <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-users text-primary text-xl"></i>
+                </div>
+            </div>
+            <div class="flex items-center space-x-1 mt-2">
+                <i class="fas fa-arrow-up text-primary text-xs"></i>
+                <span class="text-xs text-primary">+{{ \App\Models\User::where('created_at', '>=', now()->subMonth())->count() }} this month</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Active Projects</p>
+                    <p class="text-2xl font-bold text-black">{{ \App\Models\Projects::count() }}</p>
+                </div>
+                <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-file-alt text-primary text-xl"></i>
+                </div>
+            </div>
+            <div class="flex items-center space-x-1 mt-2">
+                <i class="fas fa-arrow-up-right text-primary text-xs"></i>
+                <span class="text-xs text-primary">{{ \App\Models\Projects::where('status', 'in_progress')->count() }} in progress</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Tasks</p>
+                    <p class="text-2xl font-bold text-black">{{ \App\Models\Tasks::count() }}</p>
+                </div>
+                <div class="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-tasks text-secondary text-xl"></i>
+                </div>
+            </div>
+            <div class="mt-2">
+                <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                    <i class="fas fa-check-circle mr-1 text-xs"></i>
+                    {{ \App\Models\Tasks::where('status', 'done')->count() }} completed
+                </span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Files Uploaded</p>
+                    <p class="text-2xl font-bold text-black">{{ \App\Models\Files::count() }}</p>
+                    <p class="text-xs text-gray-500">{{ round(\App\Models\Files::all()->sum(function($file) {
+                        return \Illuminate\Support\Facades\Storage::disk('public')->exists($file->file_path) ? \Illuminate\Support\Facades\Storage::disk('public')->size($file->file_path) / (1024 * 1024) : 0;
+                    }), 1) }} MB total</p>
+                </div>
+                <div class="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-hdd text-accent text-xl"></i>
+                </div>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                @php
+                    $totalFiles = \App\Models\Files::count();
+                    $storagePercentage = $totalFiles > 0 ? min(($totalFiles / 100) * 100, 100) : 0;
+                @endphp
+                <div
+                    id="storageBar"
+                    class="h-2 rounded-full bg-accent"
+                    style="width: {{ $storagePercentage }}%"
+                ></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+        <h2 class="text-xl font-semibold text-black mb-4">Quick Actions</h2>
+        <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <a href="{{ route('users.index') }}" class="quick-action-btn flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:border-primary hover:shadow-md transition-all group">
+                <div class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-users text-white text-xl"></i>
+                </div>
+                <span class="text-sm font-medium text-black text-center">
+                    Manage Users
+                </span>
+                <span class="text-xs text-gray-500 text-center mt-1">
+                    User accounts & permissions
+                </span>
+            </a>
+
+            <a href="{{ route('projects.index') }}" class="quick-action-btn flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:border-primary hover:shadow-md transition-all group">
+                <div class="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-project-diagram text-white text-xl"></i>
+                </div>
+                <span class="text-sm font-medium text-black text-center">
+                    Projects
+                </span>
+                <span class="text-xs text-gray-500 text-center mt-1">
+                    Manage projects
+                </span>
+            </a>
+
+            <a href="{{ route('tasks.index') }}" class="quick-action-btn flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:border-primary hover:shadow-md transition-all group">
+                <div class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-tasks text-white text-xl"></i>
+                </div>
+                <span class="text-sm font-medium text-black text-center">
+                    Tasks
+                </span>
+                <span class="text-xs text-gray-500 text-center mt-1">
+                    Task management
+                </span>
+            </a>
+
+            <a href="{{ route('files.index') }}" class="quick-action-btn flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:border-primary hover:shadow-md transition-all group">
+                <div class="w-12 h-12 bg-accent rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-file-upload text-white text-xl"></i>
+                </div>
+                <span class="text-sm font-medium text-black text-center">
+                    Files
+                </span>
+                <span class="text-xs text-gray-500 text-center mt-1">
+                    File management
+                </span>
+            </a>
+
+            <a href="{{ route('time-logs.index') }}" class="quick-action-btn flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:border-primary hover:shadow-md transition-all group">
+                <div class="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-clock text-white text-xl"></i>
+                </div>
+                <span class="text-sm font-medium text-black text-center">
+                    Time Logs
+                </span>
+                <span class="text-xs text-gray-500 text-center mt-1">
+                    Time tracking
+                </span>
+            </a>
+
+            <a href="{{ route('subtasks.index') }}" class="quick-action-btn flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:border-primary hover:shadow-md transition-all group">
+                <div class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-list-ul text-white text-xl"></i>
+                </div>
+                <span class="text-sm font-medium text-black text-center">
+                    Subtasks
+                </span>
+                <span class="text-xs text-gray-500 text-center mt-1">
+                    Subtask management
+                </span>
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <!-- System Health -->
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold text-black">System Health</h3>
+                <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                    <i class="fas fa-check-circle mr-1 text-xs"></i>
+                    Healthy
+                </span>
+            </div>
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Projects Health -->
+                <div class="health-metric bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover-scale transition-all-custom">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-project-diagram text-primary"></i>
                         </div>
-                        <button onclick="hideAlert()" class="hover:opacity-70 transition-opacity">
-                            <i class="fas fa-times-circle"></i>
-                        </button>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-black">{{ \App\Models\Projects::count() }}</div>
+                            <div class="flex items-center space-x-1 text-xs text-primary">
+                                <i class="fas fa-chart-line text-xs"></i>
+                                <span>active</span>
+                            </div>
+                        </div>
                     </div>
+                    <h3 class="text-sm font-medium text-black mb-1">Projects</h3>
+                    <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                        <i class="fas fa-check-circle mr-1 text-xs"></i>
+                        {{ \App\Models\Projects::where('status', 'completed')->count() }} completed
+                    </span>
                 </div>
 
-                <!-- Header -->
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-8">
-                    <div>
-                        <div class="flex items-center space-x-3 mb-2">
-                            <i class="fas fa-shield-alt text-primary text-2xl"></i>
-                            <h1 class="text-3xl font-bold text-black">System Administration</h1>
+                <!-- Tasks Health -->
+                <div class="health-metric bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover-scale transition-all-custom">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-tasks text-primary"></i>
                         </div>
-                        <p class="text-gray-600">
-                            Monitor system health, manage users, and configure platform settings
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-black">{{ \App\Models\Tasks::count() }}</div>
+                            <div class="flex items-center space-x-1 text-xs text-gray-600">
+                                <span>total</span>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="text-sm font-medium text-black mb-1">Tasks</h3>
+                    <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                        <i class="fas fa-check-circle mr-1 text-xs"></i>
+                        {{ \App\Models\Tasks::where('status', 'done')->count() }} done
+                    </span>
+                </div>
+
+                <!-- Files Health -->
+                <div class="health-metric bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover-scale transition-all-custom">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file text-primary"></i>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-black">{{ \App\Models\Files::count() }}</div>
+                            <div class="flex items-center space-x-1 text-xs text-primary">
+                                <i class="fas fa-arrow-up text-xs"></i>
+                                <span>uploaded</span>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="text-sm font-medium text-black mb-1">Files</h3>
+                    <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                        <i class="fas fa-check-circle mr-1 text-xs"></i>
+                        Active
+                    </span>
+                </div>
+
+                <!-- Time Tracking -->
+                <div class="health-metric bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover-scale transition-all-custom">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-clock text-primary"></i>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-black">{{ \App\Models\time_logs::count() }}</div>
+                            <div class="flex items-center space-x-1 text-xs text-primary">
+                                <i class="fas fa-arrow-up text-xs"></i>
+                                <span>logs</span>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="text-sm font-medium text-black mb-1">Time Logs</h3>
+                    <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                        <i class="fas fa-check-circle mr-1 text-xs"></i>
+                        {{ \App\Models\time_logs::sum('hours') }} hours
+                    </span>
+                </div>
+
+                <!-- Subtasks -->
+                <div class="health-metric bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover-scale transition-all-custom">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-list-ul text-accent"></i>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-black">{{ \App\Models\task_subtasks::count() }}</div>
+                            <div class="flex items-center space-x-1 text-xs text-primary">
+                                <i class="fas fa-arrow-up text-xs"></i>
+                                <span>total</span>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="text-sm font-medium text-black mb-1">Subtasks</h3>
+                    <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                        <i class="fas fa-check-circle mr-1 text-xs"></i>
+                        {{ \App\Models\task_subtasks::where('status', 'done')->count() }} done
+                    </span>
+                </div>
+
+                <!-- Users -->
+                <div class="health-metric bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover-scale transition-all-custom">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-users text-primary"></i>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-black">{{ \App\Models\User::count() }}</div>
+                            <div class="flex items-center space-x-1 text-xs text-gray-600">
+                                <span>active</span>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="text-sm font-medium text-black mb-1">Users</h3>
+                    <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                        <i class="fas fa-check-circle mr-1 text-xs"></i>
+                        Active
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold text-black">Recent Activity</h3>
+                <button class="text-sm text-primary hover:text-[#146c3e] font-medium">
+                    View All
+                </button>
+            </div>
+            <div class="space-y-2 max-h-96 overflow-y-auto scrollbar-custom">
+                @php
+                    $recentActivities = collect();
+
+                    // Recent users
+                    $recentUsers = \App\Models\User::latest()->take(3)->get()->map(function($user) {
+                        return [
+                            'type' => 'user',
+                            'message' => "New user registered: {$user->name}",
+                            'time' => $user->created_at,
+                            'icon' => 'fas fa-user-plus',
+                            'color' => 'text-primary'
+                        ];
+                    });
+
+                    // Recent projects
+                    $recentProjects = \App\Models\Projects::latest()->take(2)->get()->map(function($project) {
+                        return [
+                            'type' => 'project',
+                            'message' => "New project created: {$project->name}",
+                            'time' => $project->created_at,
+                            'icon' => 'fas fa-project-diagram',
+                            'color' => 'text-secondary'
+                        ];
+                    });
+
+                    // Recent tasks
+                    $recentTasks = \App\Models\tasks::latest()->take(2)->get()->map(function($task) {
+                        return [
+                            'type' => 'task',
+                            'message' => "New task created: {$task->title}",
+                            'time' => $task->created_at,
+                            'icon' => 'fas fa-tasks',
+                            'color' => 'text-accent'
+                        ];
+                    });
+
+                    // Recent files
+                    $recentFiles = \App\Models\Files::latest()->take(2)->get()->map(function($file) {
+                        return [
+                            'type' => 'file',
+                            'message' => "File uploaded: {$file->file_name}",
+                            'time' => $file->created_at,
+                            'icon' => 'fas fa-file-upload',
+                            'color' => 'text-primary'
+                        ];
+                    });
+
+                    $recentActivities = $recentUsers->merge($recentProjects)->merge($recentTasks)->merge($recentFiles)
+                        ->sortByDesc('time')
+                        ->take(5);
+                @endphp
+
+                @forelse($recentActivities as $activity)
+                <div class="activity-item flex items-start space-x-3 p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center {{ $activity['color'] }} bg-gray-100">
+                        <i class="{{ $activity['icon'] }}"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm text-black">
+                            <span class="font-semibold">System</span>
+                            <span class="text-gray-600"> {{ $activity['message'] }}</span>
                         </p>
-                    </div>
-
-                    <div class="flex items-center space-x-4 mt-4 lg:mt-0">
-                        <div class="relative">
-                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                            <input
-                                type="text"
-                                id="searchInput"
-                                placeholder="Search users, logs..."
-                                class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-64 bg-white"
-                            />
-                        </div>
-
-                        <button
-                            id="clearCacheBtn"
-                            class="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-[#9a8874] transition-colors font-medium flex items-center space-x-2"
-                        >
-                            <i class="fas fa-sync-alt"></i>
-                            <span>Clear Cache</span>
-                        </button>
+                        <p class="text-xs text-gray-500 mt-1">{{ $activity['time']->diffForHumans() }}</p>
                     </div>
                 </div>
-
-                <!-- Navigation Tabs -->
-                <div class="flex space-x-1 bg-white rounded-lg p-1 border border-gray-200 mb-8">
-                    <button
-                        data-tab="overview"
-                        class="tab-btn flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors bg-primary text-white"
-                    >
-                        Overview
-                    </button>
-                    <button
-                        data-tab="users"
-                        class="tab-btn flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-black hover:bg-gray-100"
-                    >
-                        Users
-                    </button>
-                    <button
-                        data-tab="system"
-                        class="tab-btn flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-black hover:bg-gray-100"
-                    >
-                        System
-                    </button>
-                    <button
-                        data-tab="monitoring"
-                        class="tab-btn flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-black hover:bg-gray-100"
-                    >
-                        Monitoring
-                    </button>
-                    <button
-                        data-tab="security"
-                        class="tab-btn flex-1 px-4 py-2 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-black hover:bg-gray-100"
-                    >
-                        Security
-                    </button>
+                @empty
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox text-gray-400 text-2xl mb-2"></i>
+                    <p class="text-gray-500 text-sm">No recent activity</p>
                 </div>
+                @endforelse
+            </div>
+        </div>
+    </div>
+</div>
 
-                <!-- Overview Tab -->
-                <div id="overviewTab" class="tab-content space-y-8">
-                    <!-- System Stats -->
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Total Users</p>
-                                    <p class="text-2xl font-bold text-black" id="totalUsers">5</p>
-                                </div>
-                                <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-users text-primary text-xl"></i>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-1 mt-2">
-                                <i class="fas fa-arrow-up text-primary text-xs"></i>
-                                <span class="text-xs text-primary">+5 this month</span>
-                            </div>
-                        </div>
+<!-- Users Tab -->
+<div id="usersTab" class="tab-content hidden">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-black">User Management</h2>
+                <a href="{{ route('users.create') }}" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#146c3e] transition-colors font-medium flex items-center space-x-2">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Add User</span>
+                </a>
+            </div>
+        </div>
 
-                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Active Projects</p>
-                                    <p class="text-2xl font-bold text-black" id="activeProjects">2</p>
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach(\App\Models\User::latest()->get() as $user)
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                                        {{ strtoupper(substr($user->name, 0, 1)) }}
+                                    </div>
+                                    <div class="ml-3">
+                                        <div class="text-sm font-medium text-black">{{ $user->name }}</div>
+                                    </div>
                                 </div>
-                                <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-file-alt text-primary text-xl"></i>
-                                </div>
-                            </div>
-                            <div class="flex items-center space-x-1 mt-2">
-                                <i class="fas fa-arrow-up-right text-primary text-xs"></i>
-                                <span class="text-xs text-primary">+12% growth</span>
-                            </div>
-                        </div>
-
-                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">System Uptime</p>
-                                    <p class="text-2xl font-bold text-black" id="systemUptime">99.9%</p>
-                                </div>
-                                <div class="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-chart-line text-secondary text-xl"></i>
-                                </div>
-                            </div>
-                            <div class="mt-2">
-                                <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                                    <i class="fas fa-check-circle mr-1 text-xs"></i>
-                                    Healthy
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ $user->email }}</div>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                    User
                                 </span>
-                            </div>
-                        </div>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {{ $user->created_at->format('M d, Y') }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                <a href="{{ route('users.edit', $user->id) }}" class="text-primary hover:text-[#146c3e] mr-3">Edit</a>
+                                <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('Are you sure?')">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
-                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-600">Storage Used</p>
-                                    <p class="text-2xl font-bold text-black" id="storageUsed">2.4 GB</p>
-                                    <p class="text-xs text-gray-500">of 10 GB</p>
-                                </div>
-                                <div class="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-hdd text-accent text-xl"></i>
-                                </div>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
-                                <div
-                                    id="storageBar"
-                                    class="h-2 rounded-full bg-accent"
-                                    style="width: 24%"
-                                ></div>
-                            </div>
-                        </div>
-                    </div>
+<!-- Projects Tab -->
+<div id="projectsTab" class="tab-content hidden">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-black">Project Management</h2>
+                <a href="{{ route('projects.create') }}" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#146c3e] transition-colors font-medium flex items-center space-x-2">
+                    <i class="fas fa-plus"></i>
+                    <span>Add Project</span>
+                </a>
+            </div>
+        </div>
 
-                    <!-- Quick Actions -->
-                    <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                        <h2 class="text-xl font-semibold text-black mb-4">Quick Actions</h2>
-                        <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                            <button
-                                data-action="manage-users"
-                                class="quick-action-btn flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:border-primary hover:shadow-md transition-all group"
-                            >
-                                <div class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-users text-white text-xl"></i>
-                                </div>
-                                <span class="text-sm font-medium text-black text-center">
-                                    Manage Users
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach(\App\Models\Projects::withCount('tasks')->latest()->get() as $project)
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <div class="text-sm font-medium text-black">{{ $project->name }}</div>
+                                <div class="text-sm text-gray-500">{{ $project->tasks_count }} tasks</div>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    @if($project->status == 'completed') bg-green-100 text-green-800
+                                    @elseif($project->status == 'in_progress') bg-yellow-100 text-yellow-800
+                                    @else bg-gray-100 text-gray-800 @endif">
+                                    {{ ucfirst($project->status) }}
                                 </span>
-                                <span class="text-xs text-gray-500 text-center mt-1">
-                                    User accounts & permissions
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {{ $project->start_date ? \Carbon\Carbon::parse($project->start_date)->format('M d, Y') : 'N/A' }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {{ $project->due_date ? \Carbon\Carbon::parse($project->due_date)->format('M d, Y') : 'N/A' }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                <a href="{{ route('projects.show', $project->id) }}" class="text-primary hover:text-[#146c3e] mr-3">View</a>
+                                <a href="{{ route('projects.edit', $project->id) }}" class="text-primary hover:text-[#146c3e] mr-3">Edit</a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tasks Tab -->
+<div id="tasksTab" class="tab-content hidden">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-black">Task Management</h2>
+                <a href="{{ route('tasks.create') }}" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#146c3e] transition-colors font-medium flex items-center space-x-2">
+                    <i class="fas fa-plus"></i>
+                    <span>Add Task</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach(\App\Models\tasks::with('project')->latest()->get() as $task)
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <div class="text-sm font-medium text-black">{{ $task->title }}</div>
+                                <div class="text-sm text-gray-500">{{ Str::limit($task->description, 50) }}</div>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {{ $task->project->name ?? 'N/A' }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    @if($task->status == 'done') bg-green-100 text-green-800
+                                    @elseif($task->status == 'in_progress') bg-yellow-100 text-yellow-800
+                                    @else bg-gray-100 text-gray-800 @endif">
+                                    {{ ucfirst(str_replace('_', ' ', $task->status)) }}
                                 </span>
-                            </button>
-
-                            <button
-                                data-action="system-settings"
-                                class="quick-action-btn flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:border-primary hover:shadow-md transition-all group"
-                            >
-                                <div class="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-cog text-white text-xl"></i>
-                                </div>
-                                <span class="text-sm font-medium text-black text-center">
-                                    System Settings
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                @if($task->priority)
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    @if($task->priority == 'high') bg-red-100 text-red-800
+                                    @elseif($task->priority == 'medium') bg-yellow-100 text-yellow-800
+                                    @else bg-gray-100 text-gray-800 @endif">
+                                    {{ ucfirst($task->priority) }}
                                 </span>
-                                <span class="text-xs text-gray-500 text-center mt-1">
-                                    Platform configuration
-                                </span>
-                            </button>
+                                @else
+                                <span class="text-xs text-gray-500">Not set</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                <a href="{{ route('tasks.show', $task->id) }}" class="text-primary hover:text-[#146c3e] mr-3">View</a>
+                                <a href="{{ route('tasks.edit', $task->id) }}" class="text-primary hover:text-[#146c3e] mr-3">Edit</a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
-                            <button
-                                data-action="security"
-                                class="quick-action-btn flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:border-primary hover:shadow-md transition-all group"
-                            >
-                                <div class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-shield-alt text-white text-xl"></i>
+<!-- Files Tab -->
+<div id="filesTab" class="tab-content hidden">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-black">File Management</h2>
+                <a href="{{ route('files.create') }}" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#146c3e] transition-colors font-medium flex items-center space-x-2">
+                    <i class="fas fa-upload"></i>
+                    <span>Upload File</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uploaded By</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach(\App\Models\Files::with(['project', 'user'])->latest()->get() as $file)
+                        <tr>
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <i class="fas fa-file text-gray-400 mr-2"></i>
+                                    <div class="text-sm font-medium text-black">{{ $file->file_name }}</div>
                                 </div>
-                                <span class="text-sm font-medium text-black text-center">
-                                    Security
-                                </span>
-                                <span class="text-xs text-gray-500 text-center mt-1">
-                                    Security & access control
-                                </span>
-                            </button>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {{ $file->project->name ?? 'N/A' }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {{ $file->user->name ?? 'N/A' }}
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                @if(\Illuminate\Support\Facades\Storage::disk('public')->exists($file->file_path))
+                                    {{ number_format(\Illuminate\Support\Facades\Storage::disk('public')->size($file->file_path) / 1024, 1) }} KB
+                                @else
+                                    N/A
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                <a href="{{ route('files.download', $file->id) }}" class="text-primary hover:text-[#146c3e] mr-3">Download</a>
+                                <a href="{{ route('files.show', $file->id) }}" class="text-primary hover:text-[#146c3e] mr-3">View</a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
-                            <button
-                                data-action="backup"
-                                class="quick-action-btn flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:border-primary hover:shadow-md transition-all group"
-                            >
-                                <div class="w-12 h-12 bg-accent rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-database text-white text-xl"></i>
-                                </div>
-                                <span class="text-sm font-medium text-black text-center">
-                                    Backup & Restore
-                                </span>
-                                <span class="text-xs text-gray-500 text-center mt-1">
-                                    Data management
-                                </span>
-                            </button>
+<script>
+// Tab functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
 
-                            <button
-                                data-action="monitoring"
-                                class="quick-action-btn flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:border-primary hover:shadow-md transition-all group"
-                            >
-                                <div class="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-chart-line text-white text-xl"></i>
-                                </div>
-                                <span class="text-sm font-medium text-black text-center">
-                                    System Monitoring
-                                </span>
-                                <span class="text-xs text-gray-500 text-center mt-1">
-                                    Real-time metrics
-                                </span>
-                            </button>
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
 
-                            <button
-                                data-action="billing"
-                                class="quick-action-btn flex flex-col items-center p-4 border border-gray-200 rounded-xl hover:border-primary hover:shadow-md transition-all group"
-                            >
-                                <div class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                    <i class="fas fa-credit-card text-white text-xl"></i>
-                                </div>
-                                <span class="text-sm font-medium text-black text-center">
-                                    Billing
-                                </span>
-                                <span class="text-xs text-gray-500 text-center mt-1">
-                                    Subscription & payments
-                                </span>
-                            </button>
-                        </div>
-                    </div>
+            // Update active tab button
+            tabButtons.forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('text-gray-600', 'hover:text-black', 'hover:bg-gray-100');
+            });
+            this.classList.add('bg-primary', 'text-white');
+            this.classList.remove('text-gray-600', 'hover:text-black', 'hover:bg-gray-100');
 
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                        <!-- System Health -->
-                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-lg font-semibold text-black">System Health</h3>
-                                <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                                    <i class="fas fa-check-circle mr-1 text-xs"></i>
-                                    Healthy
-                                </span>
-                            </div>
-                            <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                                <!-- Server Health -->
-                                <div class="health-metric bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover-scale transition-all-custom">
-                                    <div class="flex items-center justify-between mb-3">
-                                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-server text-primary"></i>
-                                        </div>
-                                        <div class="text-right">
-                                            <div class="text-lg font-bold text-black">55%</div>
-                                            <div class="flex items-center space-x-1 text-xs text-primary">
-                                                <i class="fas fa-arrow-up text-xs"></i>
-                                                <span>up</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <h3 class="text-sm font-medium text-black mb-1">Server Health</h3>
-                                    <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                                        <i class="fas fa-check-circle mr-1 text-xs"></i>
-                                        Healthy
-                                    </span>
-                                </div>
+            // Show active tab content
+            tabContents.forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(tabId + 'Tab').classList.remove('hidden');
+        });
+    });
 
-                                <!-- Database -->
-                                <div class="health-metric bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover-scale transition-all-custom">
-                                    <div class="flex items-center justify-between mb-3">
-                                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-database text-primary"></i>
-                                        </div>
-                                        <div class="text-right">
-                                            <div class="text-lg font-bold text-black">98%</div>
-                                            <div class="flex items-center space-x-1 text-xs text-gray-600">
-                                                <span>stable</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <h3 class="text-sm font-medium text-black mb-1">Database</h3>
-                                    <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                                        <i class="fas fa-check-circle mr-1 text-xs"></i>
-                                        Healthy
-                                    </span>
-                                </div>
+    // Clear cache button
+    document.getElementById('clearCacheBtn').addEventListener('click', function() {
+        fetch('', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            showAlert('Cache cleared successfully!');
+        })
+        .catch(error => {
+            showAlert('Error clearing cache', 'error');
+        });
+    });
 
-                                <!-- API Performance -->
-                                <div class="health-metric bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover-scale transition-all-custom">
-                                    <div class="flex items-center justify-between mb-3">
-                                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-microchip text-primary"></i>
-                                        </div>
-                                        <div class="text-right">
-                                            <div class="text-lg font-bold text-black">99.8%</div>
-                                            <div class="flex items-center space-x-1 text-xs text-primary">
-                                                <i class="fas fa-arrow-up text-xs"></i>
-                                                <span>up</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <h3 class="text-sm font-medium text-black mb-1">API Performance</h3>
-                                    <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                                        <i class="fas fa-check-circle mr-1 text-xs"></i>
-                                        Healthy
-                                    </span>
-                                </div>
+    // Search functionality
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        // Implement search logic based on active tab
+    });
+});
 
-                                <!-- Network -->
-                                <div class="health-metric bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover-scale transition-all-custom">
-                                    <div class="flex items-center justify-between mb-3">
-                                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-network-wired text-primary"></i>
-                                        </div>
-                                        <div class="text-right">
-                                            <div class="text-lg font-bold text-black">99%</div>
-                                            <div class="flex items-center space-x-1 text-xs text-primary">
-                                                <i class="fas fa-arrow-up text-xs"></i>
-                                                <span>up</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <h3 class="text-sm font-medium text-black mb-1">Network</h3>
-                                    <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                                        <i class="fas fa-check-circle mr-1 text-xs"></i>
-                                        Healthy
-                                    </span>
-                                </div>
+function showAlert(message, type = 'success') {
+    const alert = document.getElementById('systemAlert');
+    const alertMessage = document.getElementById('alertMessage');
 
-                                <!-- Storage -->
-                                <div class="health-metric bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover-scale transition-all-custom">
-                                    <div class="flex items-center justify-between mb-3">
-                                        <div class="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-hdd text-accent"></i>
-                                        </div>
-                                        <div class="text-right">
-                                            <div class="text-lg font-bold text-black">24%</div>
-                                            <div class="flex items-center space-x-1 text-xs text-primary">
-                                                <i class="fas fa-arrow-up text-xs"></i>
-                                                <span>up</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <h3 class="text-sm font-medium text-black mb-1">Storage</h3>
-                                    <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                                        <i class="fas fa-check-circle mr-1 text-xs"></i>
-                                        Healthy
-                                    </span>
-                                </div>
+    alertMessage.textContent = message;
+    alert.classList.remove('hidden');
 
-                                <!-- Security -->
-                                <div class="health-metric bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover-scale transition-all-custom">
-                                    <div class="flex items-center justify-between mb-3">
-                                        <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-shield-alt text-primary"></i>
-                                        </div>
-                                        <div class="text-right">
-                                            <div class="text-lg font-bold text-black">100%</div>
-                                            <div class="flex items-center space-x-1 text-xs text-gray-600">
-                                                <span>stable</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <h3 class="text-sm font-medium text-black mb-1">Security</h3>
-                                    <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                                        <i class="fas fa-check-circle mr-1 text-xs"></i>
-                                        Healthy
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+    setTimeout(() => {
+        hideAlert();
+    }, 5000);
+}
 
-                        <!-- Recent Activity -->
-                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-lg font-semibold text-black">Recent Activity</h3>
-                                <button class="text-sm text-primary hover:text-[#146c3e] font-medium">
-                                    View All
-                                </button>
-                            </div>
-                            <div class="space-y-2 max-h-96 overflow-y-auto scrollbar-custom">
-                                <!-- Activity Item 1 -->
-                                <div class="activity-item flex items-start space-x-3 p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-primary bg-gray-100">
-                                        <i class="fas fa-users"></i>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm text-black">
-                                            <span class="font-semibold">Alex Chen</span>
-                                            <span class="text-gray-600"> Successful login from New York</span>
-                                        </p>
-                                        <p class="text-xs text-gray-500 mt-1">2 minutes ago</p>
-                                    </div>
-                                </div>
+function hideAlert() {
+    document.getElementById('systemAlert').classList.add('hidden');
+}
+</script>
 
-                                <!-- Activity Item 2 -->
-                                <div class="activity-item flex items-start space-x-3 p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-primary bg-gray-100">
-                                        <i class="fas fa-shield-alt"></i>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm text-black">
-                                            <span class="font-semibold">System</span>
-                                            <span class="text-gray-600"> Security patch applied successfully</span>
-                                        </p>
-                                        <p class="text-xs text-gray-500 mt-1">15 minutes ago</p>
-                                    </div>
-                                </div>
+<style>
+.hidden {
+    display: none;
+}
 
-                                <!-- Activity Item 3 -->
-                                <div class="activity-item flex items-start space-x-3 p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-accent bg-gray-100">
-                                        <i class="fas fa-exclamation-triangle"></i>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm text-black">
-                                            <span class="font-semibold">API Gateway</span>
-                                            <span class="text-gray-600"> Temporary API slowdown detected</span>
-                                        </p>
-                                        <p class="text-xs text-gray-500 mt-1">1 hour ago</p>
-                                    </div>
-                                </div>
+.hover-scale:hover {
+    transform: scale(1.02);
+}
 
-                                <!-- Activity Item 4 -->
-                                <div class="activity-item flex items-start space-x-3 p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-primary bg-gray-100">
-                                        <i class="fas fa-database"></i>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm text-black">
-                                            <span class="font-semibold">Backup System</span>
-                                            <span class="text-gray-600"> Nightly backup completed successfully</span>
-                                        </p>
-                                        <p class="text-xs text-gray-500 mt-1">3 hours ago</p>
-                                    </div>
-                                </div>
+.transition-all-custom {
+    transition: all 0.3s ease;
+}
 
-                                <!-- Activity Item 5 -->
-                                <div class="activity-item flex items-start space-x-3 p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-primary bg-gray-100">
-                                        <i class="fas fa-user-plus"></i>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm text-black">
-                                            <span class="font-semibold">Sarah Kim</span>
-                                            <span class="text-gray-600"> New team member registered</span>
-                                        </p>
-                                        <p class="text-xs text-gray-500 mt-1">5 hours ago</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+.scrollbar-custom::-webkit-scrollbar {
+    width: 4px;
+}
 
-                <!-- Users Tab -->
-                <div id="usersTab" class="tab-content hidden">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
-                        <div class="p-6 border-b border-gray-200">
-                            <div class="flex justify-between items-center">
-                                <h2 class="text-xl font-semibold text-black">User Management</h2>
-                                <button
-                                    id="addUserBtn"
-                                    class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#146c3e] transition-colors font-medium flex items-center space-x-2"
-                                >
-                                    <i class="fas fa-user-plus"></i>
-                                    <span>Add User</span>
-                                </button>
-                            </div>
-                        </div>
+.scrollbar-custom::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
 
-                        <div class="p-6">
-                            <div class="overflow-x-auto">
-                                <table class="w-full">
-                                    <thead>
-                                        <tr class="border-b border-gray-200">
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
-                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="usersTableBody" class="divide-y divide-gray-100">
-                                        <!-- Users will be populated here by JavaScript -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+.scrollbar-custom::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 2px;
+}
 
-                <!-- System Tab -->
-                <div id="systemTab" class="tab-content hidden">
-                    <div class="space-y-6">
-                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                            <h3 class="text-lg font-semibold text-black mb-4">System Configuration</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="space-y-4">
-                                    <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg">
-                                        <div>
-                                            <h4 class="font-medium text-black">Maintenance Mode</h4>
-                                            <p class="text-sm text-gray-600">Temporarily disable platform access</p>
-                                        </div>
-                                        <button class="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-[#9a8874] transition-colors text-sm">
-                                            Enable
-                                        </button>
-                                    </div>
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
 
-                                    <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg">
-                                        <div>
-                                            <h4 class="font-medium text-black">Auto Backups</h4>
-                                            <p class="text-sm text-gray-600">Daily at 2:00 AM UTC</p>
-                                        </div>
-                                        <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#146c3e] transition-colors text-sm">
-                                            Configure
-                                        </button>
-                                    </div>
-                                </div>
+.status-badge.status-healthy {
+    background-color: #dcfce7;
+    color: #166534;
+}
 
-                                <div class="space-y-4">
-                                    <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg">
-                                        <div>
-                                            <h4 class="font-medium text-black">Email Notifications</h4>
-                                            <p class="text-sm text-gray-600">System alerts and reports</p>
-                                        </div>
-                                        <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#146c3e] transition-colors text-sm">
-                                            Enabled
-                                        </button>
-                                    </div>
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
 
-                                    <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg">
-                                        <div>
-                                            <h4 class="font-medium text-black">System Reboot</h4>
-                                            <p class="text-sm text-gray-600">Restart all services</p>
-                                        </div>
-                                        <button
-                                            id="rebootSystemBtn"
-                                            class="px-4 py-2 bg-accent text-white rounded-lg hover:bg-[#e0861a] transition-colors text-sm"
-                                        >
-                                            Reboot
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Monitoring Tab -->
-                <div id="monitoringTab" class="tab-content hidden">
-                    <div class="space-y-6">
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                                <h4 class="font-semibold text-black mb-4">API Performance</h4>
-                                <div class="space-y-3">
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Response Time</span>
-                                        <span class="font-medium">128ms</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Error Rate</span>
-                                        <span class="font-medium">0.2%</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Requests/Min</span>
-                                        <span class="font-medium">42</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                                <h4 class="font-semibold text-black mb-4">Server Resources</h4>
-                                <div class="space-y-3">
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">CPU Load</span>
-                                        <span class="font-medium">45%</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Memory Usage</span>
-                                        <span class="font-medium">68%</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Disk I/O</span>
-                                        <span class="font-medium">124 MB/s</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                                <h4 class="font-semibold text-black mb-4">Database</h4>
-                                <div class="space-y-3">
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Active Connections</span>
-                                        <span class="font-medium">24</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Queries/Sec</span>
-                                        <span class="font-medium">8.2K</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-sm text-gray-600">Cache Hit Rate</span>
-                                        <span class="font-medium">94%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Security Tab -->
-                <div id="securityTab" class="tab-content hidden">
-                    <div class="space-y-6">
-                        <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-                            <h3 class="text-lg font-semibold text-black mb-4">Security Settings</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="space-y-4">
-                                    <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg">
-                                        <div>
-                                            <h4 class="font-medium text-black">Two-Factor Auth</h4>
-                                            <p class="text-sm text-gray-600">Require 2FA for all users</p>
-                                        </div>
-                                        <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#146c3e] transition-colors text-sm">
-                                            Enforced
-                                        </button>
-                                    </div>
-
-                                    <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg">
-                                        <div>
-                                            <h4 class="font-medium text-black">Password Policy</h4>
-                                            <p class="text-sm text-gray-600">Strong password requirements</p>
-                                        </div>
-                                        <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#146c3e] transition-colors text-sm">
-                                            Configure
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="space-y-4">
-                                    <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg">
-                                        <div>
-                                            <h4 class="font-medium text-black">Session Timeout</h4>
-                                            <p class="text-sm text-gray-600">Auto-logout after 24 hours</p>
-                                        </div>
-                                        <button class="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-[#9a8874] transition-colors text-sm">
-                                            Edit
-                                        </button>
-                                    </div>
-
-                                    <div class="flex justify-between items-center p-4 border border-gray-200 rounded-lg">
-                                        <div>
-                                            <h4 class="font-medium text-black">API Rate Limiting</h4>
-                                            <p class="text-sm text-gray-600">1000 requests/hour per user</p>
-                                        </div>
-                                        <button class="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-[#9a8874] transition-colors text-sm">
-                                            Adjust
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+@keyframes slideIn {
+    from {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+</style>
 
 @endsection
