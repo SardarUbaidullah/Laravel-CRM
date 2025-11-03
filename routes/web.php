@@ -5,6 +5,10 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\Manager\DashboardController;
+use App\Http\Controllers\Manager\ProjectController as manager_projectController;
+use App\Http\Controllers\Manager\TaskController as manager_TaskController;
+use App\Http\Controllers\Manager\TeamController as manager_TeamController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\TimeLogController;
 use App\Http\Controllers\FileController;
@@ -19,9 +23,36 @@ Route::resource('teams', TeamController::class);
     Route::resource('users', UserController::class);
 
 
-Route::get('/dashboard', function () {
-    return view('admin.dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+    // Route::get('/dashboard', function () {
+    //     return view('admin.dashboard');
+    // })->middleware(['auth', 'verified'])->name('dashboard');
+
+// Manager routes
+
+Route::prefix('manager')->name('manager.')->middleware(['auth'])->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Projects - Full resource routes
+    Route::get('/projects', [manager_projectController::class, 'index'])->name('projects.index');
+    Route::get('/projects/{id}', [manager_projectController::class, 'show'])->name('projects.show');
+    Route::get('/projects/{id}/edit', [manager_projectController::class, 'edit'])->name('projects.edit');
+    Route::put('/projects/{id}', [manager_projectController::class, 'update'])->name('projects.update');
+    Route::delete('/projects/{id}', [manager_projectController::class, 'destroy'])->name('projects.destroy');
+
+    // Tasks
+    Route::get('/tasks', [manager_TaskController::class, 'index'])->name('tasks.index');
+    Route::get('/tasks/create', [manager_TaskController::class, 'create'])->name('tasks.create');
+    Route::post('/tasks', [manager_TaskController::class, 'store'])->name('tasks.store');
+    Route::get('/tasks/{id}', [manager_TaskController::class, 'show'])->name('tasks.show');
+    Route::get('/tasks/{id}/edit', [manager_TaskController::class, 'edit'])->name('tasks.edit');
+    Route::put('/tasks/{id}', [manager_TaskController::class, 'update'])->name('tasks.update');
+    Route::delete('/tasks/{id}', [manager_TaskController::class, 'destroy'])->name('tasks.destroy');
+
+    // Team
+    Route::get('/team', [manager_TeamController::class, 'index'])->name('team.index');
+    Route::get('/team/{id}', [manager_TeamController::class, 'show'])->name('team.show');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

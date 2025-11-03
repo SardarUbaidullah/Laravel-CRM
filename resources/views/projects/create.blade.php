@@ -91,8 +91,8 @@
                             value="{{ old('due_date') }}"
                         >
                     </div>
-
-                    <div>
+@if (Auth::user()->role=='admin')
+ <div>
                         <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
                         <select
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
@@ -104,6 +104,25 @@
                             <option value="completed" {{ old('status') == 'completed' ? 'selected' : '' }}>Completed</option>
                         </select>
                     </div>
+
+                    @elseif (Auth::user()->role=='super_admin')
+
+                    <div>
+                        <label for="manager" class="block text-sm font-medium text-gray-700 mb-2">Manger</label>
+                        <select
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                            id="manager"
+                            name="manager_id"
+                        >
+                        @foreach ($managers as $m )
+                             <option value="{{ $m->id }}">{{ $m->name }}</option>
+                        @endforeach
+                        </select>
+                    </div>
+@endif
+
+
+
                 </div>
 
                 <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">

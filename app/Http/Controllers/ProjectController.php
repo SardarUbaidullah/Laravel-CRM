@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Projects;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ProjectController extends Controller
@@ -17,7 +18,9 @@ class ProjectController extends Controller
     // GET /projects/create
     public function create()
     {
-        return view('projects.create');
+        $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
+
+        return view('projects.create', compact('managers'));
     }
 
     // POST /projects
@@ -33,6 +36,7 @@ class ProjectController extends Controller
             'description' => $request->description,
             'start_date' => $request->start_date,
             'due_date' => $request->due_date,
+            'manager_id' => $request->manager_id,
             'status' => $request->status ?? 'pending',
         ]);
 

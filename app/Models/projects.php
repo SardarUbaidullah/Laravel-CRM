@@ -17,6 +17,7 @@ class Projects  extends Model
         'due_date',
         'status',
         'created_by',
+        'manager_id',
     ];
 
     protected $dates = [
@@ -56,4 +57,10 @@ class Projects  extends Model
     {
         return $this->hasMany(Milestone::class);
     }
+
+    public function manager()
+{
+    return $this->belongsTo(User::class, 'manager_id');
+}
+
 }

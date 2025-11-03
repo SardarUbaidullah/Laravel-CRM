@@ -60,4 +60,11 @@ class tasks extends Model
     {
         return $this->hasMany(TimeLog::class);
     }
+
+
+        public function assignedTasks()
+{
+    return $this->belongsTo(User::class, 'manager_id');
+}
+
 }

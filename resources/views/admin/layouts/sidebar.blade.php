@@ -190,8 +190,8 @@
                 src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face"
                 alt="User Name">
             <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium text-sidebar-foreground truncate">John Doe</p>
-                <p class="text-xs text-muted-foreground capitalize">super admin</p>
+                <p class="text-sm font-medium text-sidebar-foreground truncate">{{Auth::user()->name}}</p>
+                <p class="text-xs text-muted-foreground capitalize"></p>
             </div>
             <i class="fas fa-chevron-down text-muted-foreground text-xs"></i>
         </div>
