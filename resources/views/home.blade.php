@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Onboarding</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Login - ProjectFlow</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
     <script>
@@ -225,7 +226,7 @@
                 </div>
 
                 <!-- Login Form - Always visible on all screen sizes -->
-                <div class="w-full max-w-md lg:max-w-lg">
+                <div class="w-full max-w-md lg:max-w-lg mx-auto">
                     <div class="transition-all duration-700 delay-600 ease-out translate-y-0 opacity-100 scale-100">
                         <div class="relative bg-white/80 backdrop-blur-xl border border-border/60 rounded-3xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-500 group animate-form-appear">
 
@@ -245,15 +246,41 @@
                                 <p class="text-muted-foreground mt-2">Sign in to your account</p>
                             </div>
 
+                            <!-- Display Success/Error Messages -->
+                            @if (session('status'))
+                                <div class="mb-4 text-sm font-medium text-green-600 bg-green-50 p-3 rounded-lg">
+                                    {{ session('status') }}
+                                </div>
+                            @endif
+
+                            @if ($errors->any())
+                                <div class="mb-4">
+                                    <div class="text-sm font-medium text-red-600 bg-red-50 p-3 rounded-lg">
+                                        <ul class="list-disc list-inside">
+                                            @foreach ($errors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                </div>
+                            @endif
+
                             <!-- Login Form -->
-                            <form class="space-y-6">
+                            <form method="POST" action="{{ route('login') }}" class="space-y-6">
+                                @csrf
+
                                 <!-- Email Field -->
                                 <div class="space-y-3">
-                                    <label class="text-sm font-medium text-foreground">Email Address</label>
+                                    <label for="email" class="text-sm font-medium text-foreground">Email Address</label>
                                     <div class="relative group">
                                         <input
+                                            id="email"
                                             type="email"
+                                            name="email"
+                                            value="{{ old('email') }}"
                                             required
+                                            autofocus
+                                            autocomplete="email"
                                             class="w-full px-4 py-4 bg-background/50 border border-border rounded-2xl focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 outline-none placeholder:text-muted-foreground/60 group-hover:border-primary/40 text-base"
                                             placeholder="Enter your email"
                                         />
@@ -264,13 +291,18 @@
                                 <!-- Password Field -->
                                 <div class="space-y-3">
                                     <div class="flex justify-between items-center">
-                                        <label class="text-sm font-medium text-foreground">Password</label>
-                                        <a href="#" class="text-xs text-primary hover:text-accent transition-colors duration-300">Forgot password?</a>
+                                        <label for="password" class="text-sm font-medium text-foreground">Password</label>
+                                        @if (Route::has('password.request'))
+                                            <a href="{{ route('password.request') }}" class="text-xs text-primary hover:text-accent transition-colors duration-300">Forgot password?</a>
+                                        @endif
                                     </div>
                                     <div class="relative group">
                                         <input
+                                            id="password"
                                             type="password"
+                                            name="password"
                                             required
+                                            autocomplete="current-password"
                                             class="w-full px-4 py-4 bg-background/50 border border-border rounded-2xl focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 outline-none placeholder:text-muted-foreground/60 group-hover:border-primary/40 text-base"
                                             placeholder="Enter your password"
                                         />
@@ -281,11 +313,12 @@
                                 <!-- Remember Me -->
                                 <div class="flex items-center space-x-3 pt-2">
                                     <input
+                                        id="remember_me"
                                         type="checkbox"
-                                        id="remember"
+                                        name="remember"
                                         class="w-4 h-4 text-primary bg-background border-border rounded focus:ring-primary/50 focus:ring-2"
                                     />
-                                    <label for="remember" class="text-sm text-foreground">Remember me</label>
+                                    <label for="remember_me" class="text-sm text-foreground">Remember me</label>
                                 </div>
 
                                 <!-- Submit Button -->
@@ -304,6 +337,16 @@
                                     <div class="absolute inset-0 bg-gradient-to-r from-primary to-accent opacity-80 blur-xl animate-button-glow"></div>
                                 </button>
                             </form>
+
+                            <!-- Register Link -->
+                            <div class="mt-6 text-center">
+                                <p class="text-sm text-muted-foreground">
+                                    Don't have an account?
+                                    <a href="{{ route('register') }}" class="text-primary hover:text-accent font-medium transition-colors duration-300 ml-1">
+                                        Sign up
+                                    </a>
+                                </p>
+                            </div>
 
                             <!-- Glow corners -->
                             <div class="absolute -top-2 -right-2 w-6 h-6 border-t-2 border-r-2 border-primary rounded-tr-3xl group-hover:w-8 group-hover:h-8 transition-all duration-300"></div>
@@ -333,18 +376,26 @@
         // Handle get started button click
         function handleGetStarted() {
             // Redirect to dashboard (replace with your actual URL)
-            window.location.href = '/dashboard';
+            window.location.href = '{{route('dashboard')}}';
         }
 
-        // Form submission
+        // Form validation and submission
         document.addEventListener('DOMContentLoaded', function() {
             generateParticles();
 
+            // Remove the form submission prevention
+            // The form will now submit normally to Laravel's login route
+
+            // Add form validation if needed
             const form = document.querySelector('form');
             form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                // Handle login logic here
-                console.log('Login form submitted');
+                // You can add client-side validation here if needed
+                // But don't prevent default submission for Laravel to handle
+
+                // Example: Show loading state
+                const submitButton = form.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<span class="relative z-10">Signing In...</span>';
             });
         });
     </script>

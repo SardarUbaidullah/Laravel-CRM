@@ -25,6 +25,10 @@ class tasks extends Model
         'start_date',
         'due_date',
     ];
+    protected $casts = [
+    'due_date' => 'datetime',
+];
+
 
     public function project()
     {

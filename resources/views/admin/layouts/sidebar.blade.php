@@ -25,13 +25,13 @@
                 <div class="w-8 h-8 bg-gradient-to-br from-primary to-green-600 rounded-full flex items-center justify-center">
                     <span class="text-white text-sm font-bold">P</span>
                 </div>
-                <span class="font-bold text-sidebar-foreground text-lg">Project M.</span>
+                <span class="font-bold text-sidebar-foreground text-lg">Super Admin</span>
             </div>
 
             <!-- Nav Menu -->
             <nav class="space-y-1 mb-8">
                 <!-- Dashboard -->
-                <a href="#" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-primary text-white border-l-2 border-primary">
+                <a href="{{route('dashboard')}}" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-primary text-white border-l-2 border-primary">
                     <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>

@@ -112,6 +112,7 @@
                                 $teamMembers = \App\Models\User::whereHas('assignedTasks', function($q) use ($project) {
                                     $q->where('project_id', $project->id);
                                 })->distinct()->count();
+
                             @endphp
                             <tr class="hover:bg-gray-50 transition duration-150">
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -208,12 +209,12 @@
                                             </svg>
                                             Tasks
                                         </a>
-                                        <a href="{{ route('manager.team.show', $project->id) }}" class="text-purple-600 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 px-3 py-2 rounded-md transition duration-200 flex items-center text-xs">
-                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
-                                            </svg>
-                                            Team
-                                        </a>
+<a href="{{ route('manager.project.team', $project->id) }}" class="text-purple-600 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 px-3 py-2 rounded-md transition duration-200 flex items-center text-xs">
+    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
+    </svg>
+    Project Team
+</a>
                                     </div>
                                 </td>
                             </tr>

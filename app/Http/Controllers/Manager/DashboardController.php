@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Manager;
 
 use App\Http\Controllers\Controller;
 use App\Models\Projects;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Tasks;
 use App\Models\User;
 use App\Models\TimeLogs;
@@ -12,20 +13,32 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function index()
-    {
-        $user = auth()->user();
 
-        // Get projects based on user role
-        if ($user->role === 'admin') {
-            $projects = Projects::where('manager_id', $user->id)->get();
-        } elseif ($user->role === 'super_admin') {
-            $projects = Projects::all();
-        } else {
-            $projects = Projects::whereHas('tasks', function ($q) use ($user) {
-                $q->where('assigned_to', $user->id);
-            })->get();
+        public function index()
+    {
+        if (!Auth::user()) {
+            return view('home');
         }
+
+        $user = Auth::user();
+
+        switch ($user->role) {
+            case 'super_admin':
+                return view('admin.dashboard');
+
+            case 'admin':
+                return $this->managerDashboard($user);
+
+            default:
+                // Handle other roles or redirect to home
+                return view('home');
+        }
+    }
+
+    private function managerDashboard($user)
+    {
+        // Get projects based on user role
+        $projects = Projects::where('manager_id', $user->id)->get();
 
         // Get statistics
         $activeProjects = $projects->where('status', 'in_progress')->count();

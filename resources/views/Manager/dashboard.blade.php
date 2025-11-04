@@ -316,6 +316,10 @@
                         <div class="text-right">
                             @if($task->due_date < now())
                                 <p class="text-sm font-semibold text-accent">Overdue</p>
+                                @php
+    $due = \Carbon\Carbon::parse($task->due_date);
+@endphp
+
                             @elseif($task->due_date->isToday())
                                 <p class="text-sm font-semibold text-orange-500">Today</p>
                             @elseif($task->due_date->isTomorrow())

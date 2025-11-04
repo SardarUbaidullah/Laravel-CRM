@@ -11,8 +11,6 @@ use Illuminate\Validation\Rule;
 
 class TaskController extends Controller
 {
-    
-
     public function index(Request $request)
     {
         $query = Tasks::whereHas('project', function($query) {
@@ -24,10 +22,72 @@ class TaskController extends Controller
             $query->where('project_id', $request->project_id);
         }
 
+        // Filter by status if provided
+        if ($request->has('status') && $request->status) {
+            $query->where('status', $request->status);
+        }
+
         $tasks = $query->latest()->get();
         $projects = Projects::where('manager_id', auth()->id())->get();
 
-        return view('manager.tasks.index', compact('tasks', 'projects'));
+        // Get counts for different statuses
+        $taskCounts = [
+            'all' => Tasks::whereHas('project', function($query) {
+                $query->where('manager_id', auth()->id());
+            })->count(),
+            'pending' => Tasks::whereHas('project', function($query) {
+                $query->where('manager_id', auth()->id());
+            })->whereIn('status', ['todo', 'in_progress'])->count(),
+            'completed' => Tasks::whereHas('project', function($query) {
+                $query->where('manager_id', auth()->id());
+            })->where('status', 'done')->count(),
+            'todo' => Tasks::whereHas('project', function($query) {
+                $query->where('manager_id', auth()->id());
+            })->where('status', 'todo')->count(),
+            'in_progress' => Tasks::whereHas('project', function($query) {
+                $query->where('manager_id', auth()->id());
+            })->where('status', 'in_progress')->count(),
+        ];
+
+        $currentStatus = $request->get('status', 'all');
+
+        return view('manager.tasks.index', compact('tasks', 'projects', 'taskCounts', 'currentStatus'));
+    }
+
+    public function pendingTasks(Request $request)
+    {
+        $query = Tasks::whereHas('project', function($query) {
+            $query->where('manager_id', auth()->id());
+        })->whereIn('status', ['todo', 'in_progress'])
+          ->with(['project', 'user', 'assignee']);
+
+        // Filter by project if provided
+        if ($request->has('project_id') && $request->project_id) {
+            $query->where('project_id', $request->project_id);
+        }
+
+        $tasks = $query->latest()->get();
+        $projects = Projects::where('manager_id', auth()->id())->get();
+
+        return view('manager.tasks.pending', compact('tasks', 'projects'));
+    }
+
+    public function completedTasks(Request $request)
+    {
+        $query = Tasks::whereHas('project', function($query) {
+            $query->where('manager_id', auth()->id());
+        })->where('status', 'done')
+          ->with(['project', 'user', 'assignee']);
+
+        // Filter by project if provided
+        if ($request->has('project_id') && $request->project_id) {
+            $query->where('project_id', $request->project_id);
+        }
+
+        $tasks = $query->latest()->get();
+        $projects = Projects::where('manager_id', auth()->id())->get();
+
+        return view('manager.tasks.completed', compact('tasks', 'projects'));
     }
 
     public function create(Request $request)
@@ -121,5 +181,29 @@ class TaskController extends Controller
 
         return redirect()->route('manager.tasks.index')
                         ->with('success', 'Task deleted successfully!');
+    }
+
+    public function markAsComplete($id)
+    {
+        $task = Tasks::whereHas('project', function($query) {
+            $query->where('manager_id', auth()->id());
+        })->findOrFail($id);
+
+        $task->update(['status' => 'done']);
+
+        return redirect()->back()
+                        ->with('success', 'Task marked as completed!');
+    }
+
+    public function markAsInProgress($id)
+    {
+        $task = Tasks::whereHas('project', function($query) {
+            $query->where('manager_id', auth()->id());
+        })->findOrFail($id);
+
+        $task->update(['status' => 'in_progress']);
+
+        return redirect()->back()
+                        ->with('success', 'Task marked as in progress!');
     }
 }
