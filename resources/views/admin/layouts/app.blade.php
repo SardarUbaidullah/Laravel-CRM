@@ -193,7 +193,7 @@
 </head>
 <body class="bg-gray-50">
     <div class="flex h-screen">
-    @include('admin.layouts.sidebar')
+    @include('Manager.layouts.sidebar')
 
 
        <!-- Main Content -->

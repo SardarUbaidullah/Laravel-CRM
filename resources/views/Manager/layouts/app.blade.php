@@ -194,13 +194,12 @@
 </head>
 <body class="bg-gray-50">
     <div class="flex h-screen">
-        <!-- Sidebar -->
-      @include('Manager.layouts.sidebar')
+    @include('admin.layouts.sidebar')
 
-        <!-- Main Content -->
+
+       <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Header -->
-            <header class="bg-white border-b border-border h-16 px-6 flex items-center justify-between">
+              <header class="bg-white border-b border-border h-16 px-6 flex items-center justify-between">
                 <!-- Left side - Search and Project Selector -->
                 <div class="flex items-center space-x-6">
                     <!-- Project Selector -->
@@ -266,6 +265,7 @@
                     </div>
                 </div>
             </header>
+                        <div class="flex-1 p-6 bg-[#FCF8F3] overflow-y-auto">
 @yield('content')
 
 

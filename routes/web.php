@@ -13,6 +13,7 @@ use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\TimeLogController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\SubTaskController;
+use App\Http\Controllers\Manager\SubTaskController as manager_SubtaskController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -52,6 +53,14 @@ Route::prefix('manager')->name('manager.')->middleware(['auth'])->group(function
     // Team
     Route::get('/team', [manager_TeamController::class, 'index'])->name('team.index');
     Route::get('/team/{id}', [manager_TeamController::class, 'show'])->name('team.show');
+
+
+    Route::get('/tasks/{taskId}/subtasks', [manager_SubtaskController::class, 'index'])->name('subtasks.index');
+    Route::get('/tasks/{taskId}/subtasks/create', [manager_SubtaskController::class, 'create'])->name('subtasks.create');
+    Route::post('/tasks/{taskId}/subtasks', [manager_SubtaskController::class, 'store'])->name('subtasks.store');
+    Route::get('/tasks/{taskId}/subtasks/{subtaskId}/edit', [manager_SubtaskController::class, 'edit'])->name('subtasks.edit');
+    Route::put('/tasks/{taskId}/subtasks/{subtaskId}', [manager_SubtaskController::class, 'update'])->name('subtasks.update');
+    Route::delete('/tasks/{taskId}/subtasks/{subtaskId}', [manager_SubtaskController::class, 'destroy'])->name('subtasks.destroy');
 });
 
 Route::middleware('auth')->group(function () {

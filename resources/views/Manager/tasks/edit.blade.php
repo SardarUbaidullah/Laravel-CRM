@@ -3,7 +3,19 @@
 @section("content")
 <div class="max-w-4xl mx-auto px-4 py-8">
     <!-- Header -->
-
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <div class="flex items-center space-x-3 mb-2">
+                <a href="{{ route('manager.tasks.show', $task->id) }}" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                </a>
+                <h1 class="text-3xl font-bold text-gray-900">Edit Task</h1>
+            </div>
+            <p class="text-gray-600">Update task details and assignment</p>
+        </div>
+    </div>
 
     @if($errors->any())
         <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
@@ -21,10 +33,20 @@
         </div>
     @endif
 
-    <!-- Create Form -->
+    @if(session('success'))
+        <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+            {{ session('success') }}
+        </div>
+    @endif
+
+    <!-- Edit Form -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <form action="{{ route('manager.tasks.store') }}" method="POST">
+        <form action="{{ route('manager.tasks.update', $task->id) }}" method="POST">
             @csrf
+            @method('PUT')
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <!-- Task Title -->
@@ -33,7 +55,7 @@
                     <input type="text"
                            name="title"
                            id="title"
-                           value="{{ old('title') }}"
+                           value="{{ old('title', $task->title) }}"
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
                            placeholder="Enter task title"
                            required>
@@ -48,8 +70,7 @@
                             required>
                         <option value="">Select Project</option>
                         @foreach($projects as $project)
-                            <option value="{{ $project->id }}"
-                                    {{ (old('project_id') == $project->id || $selectedProject == $project->id) ? 'selected' : '' }}>
+                            <option value="{{ $project->id }}" {{ old('project_id', $task->project_id) == $project->id ? 'selected' : '' }}>
                                 {{ $project->name }}
                             </option>
                         @endforeach
@@ -64,8 +85,7 @@
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
                         <option value="">Unassigned</option>
                         @foreach($users as $user)
-                            <option value="{{ $user->id }}"
-                                    {{ (old('assigned_to') == $user->id || request('assigned_to') == $user->id) ? 'selected' : '' }}>
+                            <option value="{{ $user->id }}" {{ old('assigned_to', $task->assigned_to) == $user->id ? 'selected' : '' }}>
                                 {{ $user->name }} ({{ $user->email }})
                             </option>
                         @endforeach
@@ -78,9 +98,9 @@
                     <select name="priority"
                             id="priority"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
-                        <option value="low" {{ old('priority') == 'low' ? 'selected' : '' }}>Low</option>
-                        <option value="medium" {{ old('priority', 'medium') == 'medium' ? 'selected' : '' }}>Medium</option>
-                        <option value="high" {{ old('priority') == 'high' ? 'selected' : '' }}>High</option>
+                        <option value="low" {{ old('priority', $task->priority) == 'low' ? 'selected' : '' }}>Low</option>
+                        <option value="medium" {{ old('priority', $task->priority) == 'medium' ? 'selected' : '' }}>Medium</option>
+                        <option value="high" {{ old('priority', $task->priority) == 'high' ? 'selected' : '' }}>High</option>
                     </select>
                 </div>
 
@@ -90,9 +110,9 @@
                     <select name="status"
                             id="status"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
-                        <option value="todo" {{ old('status', 'todo') == 'todo' ? 'selected' : '' }}>To Do</option>
-                        <option value="in_progress" {{ old('status') == 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                        <option value="done" {{ old('status') == 'done' ? 'selected' : '' }}>Done</option>
+                        <option value="todo" {{ old('status', $task->status) == 'todo' ? 'selected' : '' }}>To Do</option>
+                        <option value="in_progress" {{ old('status', $task->status) == 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                        <option value="done" {{ old('status', $task->status) == 'done' ? 'selected' : '' }}>Done</option>
                     </select>
                 </div>
 
@@ -102,9 +122,8 @@
                     <input type="date"
                            name="due_date"
                            id="due_date"
-                           value="{{ old('due_date') }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                           min="{{ date('Y-m-d') }}">
+                           value="{{ old('due_date', $task->due_date) }}"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
                     <p class="text-xs text-gray-500 mt-1">Leave empty if no due date</p>
                 </div>
             </div>
@@ -116,12 +135,12 @@
                           id="description"
                           rows="4"
                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                          placeholder="Enter task description">{{ old('description') }}</textarea>
+                          placeholder="Enter task description">{{ old('description', $task->description) }}</textarea>
             </div>
 
             <!-- Form Actions -->
             <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-                <a href="{{ route('manager.tasks.index') }}"
+                <a href="{{ route('manager.tasks.show', $task->id) }}"
                    class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-200 font-medium">
                     Cancel
                 </a>
@@ -132,59 +151,49 @@
                         Reset
                     </button>
                     <button type="submit"
-                            class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200 font-medium shadow-sm flex items-center">
+                            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 font-medium shadow-sm flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
-                        Create Task
+                        Update Task
                     </button>
                 </div>
             </div>
         </form>
     </div>
 
-    <!-- Quick Tips -->
-    <div class="bg-blue-50 rounded-xl p-6 mt-8 border border-blue-200">
-        <h3 class="text-lg font-semibold text-blue-900 mb-3">Quick Tips</h3>
-        <ul class="text-sm text-blue-800 space-y-2">
-            <li class="flex items-start">
-                <svg class="w-5 h-5 mr-2 mt-0.5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <span>Assign tasks to team members to track their workload and progress</span>
-            </li>
-            <li class="flex items-start">
-                <svg class="w-5 h-5 mr-2 mt-0.5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <span>Set appropriate priorities to help team members focus on important tasks first</span>
-            </li>
-            <li class="flex items-start">
-                <svg class="w-5 h-5 mr-2 mt-0.5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <span>Use due dates to ensure timely completion of tasks and project milestones</span>
-            </li>
-        </ul>
+    <!-- Task Information -->
+    <div class="bg-gray-50 rounded-xl p-6 mt-8 border border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900 mb-3">Task Information</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+                <span class="font-medium text-gray-600">Created:</span>
+                <span class="text-gray-900 ml-2">{{ $task->created_at->format('M d, Y H:i') }}</span>
+            </div>
+            <div>
+                <span class="font-medium text-gray-600">Last Updated:</span>
+                <span class="text-gray-900 ml-2">{{ $task->updated_at->format('M d, Y H:i') }}</span>
+            </div>
+            <div>
+                <span class="font-medium text-gray-600">Created By:</span>
+                <span class="text-gray-900 ml-2">{{ $task->user->name ?? 'System' }}</span>
+            </div>
+            <div>
+                <span class="font-medium text-gray-600">Current Assignee:</span>
+                <span class="text-gray-900 ml-2">{{ $task->assignee->name ?? 'Unassigned' }}</span>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const projectSelect = document.getElementById('project_id');
-    const assignedToSelect = document.getElementById('assigned_to');
     const dueDateInput = document.getElementById('due_date');
 
     // Set minimum due date to today
     if (dueDateInput) {
         const today = new Date().toISOString().split('T')[0];
         dueDateInput.min = today;
-    }
-
-    // Auto-focus on title field
-    const titleInput = document.getElementById('title');
-    if (titleInput) {
-        titleInput.focus();
     }
 
     // Show loading state when form is submitted
@@ -194,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const submitButton = this.querySelector('button[type="submit"]');
             if (submitButton) {
                 submitButton.disabled = true;
-                submitButton.innerHTML = '<svg class="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v4m0 12v4m8-10h-4M6 12H2m15.364-7.364l-2.828 2.828M7.464 17.536l-2.828 2.828m0-12.728l2.828 2.828m9.9 9.9l2.828 2.828"></path></svg> Creating Task...';
+                submitButton.innerHTML = '<svg class="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v4m0 12v4m8-10h-4M6 12H2m15.364-7.364l-2.828 2.828M7.464 17.536l-2.828 2.828m0-12.728l2.828 2.828m9.9 9.9l2.828 2.828"></path></svg> Updating Task...';
             }
         });
     }

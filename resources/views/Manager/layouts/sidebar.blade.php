@@ -36,10 +36,10 @@
                         <i :class="open.projects ? 'fas fa-chevron-up text-xs' : 'fas fa-chevron-down text-xs'"></i>
                     </button>
                     <div x-show="open.projects" x-collapse class="ml-8 mt-1 space-y-1">
-                        <a href="{{ url('/projects') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">All Projects</a>
-                        <a href="{{ url('/projects/assigned') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Assigned to Me</a>
-                        <a href="{{ url('/projects/running') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Running Projects</a>
-                        <a href="{{ url('/projects/completed') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Completed</a>
+                        <a href="{{ url('/manager/projects') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">All Projects</a>
+                        <a href="{{ url('/manager/projects/assigned') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Assigned to Me</a>
+                        <a href="{{ url('/manager/projects/running') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Running Projects</a>
+                        <a href="{{ url('/manager/projects/completed') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Completed</a>
                     </div>
                 </div>
 
@@ -53,10 +53,10 @@
                         <i :class="open.tasks ? 'fas fa-chevron-up text-xs' : 'fas fa-chevron-down text-xs'"></i>
                     </button>
                     <div x-show="open.tasks" x-collapse class="ml-8 mt-1 space-y-1">
-                        <a href="{{ url('/tasks/create') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Create Task</a>
-                        <a href="{{ url('/tasks') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Manage Tasks</a>
-                        <a href="{{ url('/tasks/pending') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Pending</a>
-                        <a href="{{ url('/tasks/completed') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Completed</a>
+                        <a href="{{ url('/manager/tasks/create') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Create Task</a>
+                        <a href="{{ url('/manager/tasks') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Manage Tasks</a>
+                        <a href="{{ url('/manager/tasks/pending') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Pending</a>
+                        <a href="{{ url('/manager/tasks/completed') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Completed</a>
                     </div>
                 </div>
 
@@ -70,8 +70,8 @@
                         <i :class="open.team ? 'fas fa-chevron-up text-xs' : 'fas fa-chevron-down text-xs'"></i>
                     </button>
                     <div x-show="open.team" x-collapse class="ml-8 mt-1 space-y-1">
-                        <a href="{{ url('/team') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Team Members</a>
-                        <a href="{{ url('/team/performance') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Performance</a>
+                        <a href="{{ url('/manager/team') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Team Members</a>
+                        <a href="{{ url('/manager/team/performance') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Performance</a>
                     </div>
                 </div>
 
@@ -85,9 +85,9 @@
                         <i :class="open.reports ? 'fas fa-chevron-up text-xs' : 'fas fa-chevron-down text-xs'"></i>
                     </button>
                     <div x-show="open.reports" x-collapse class="ml-8 mt-1 space-y-1">
-                        <a href="{{ url('/reports/project') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Project Reports</a>
-                        <a href="{{ url('/reports/team') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Team Reports</a>
-                        <a href="{{ url('/reports/timelog') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Time Logs</a>
+                        <a href="{{ url('/manager/reports/project') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Project Reports</a>
+                        <a href="{{ url('/manager/reports/team') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Team Reports</a>
+                        <a href="{{ url('/manager/reports/timelog') }}" class="block px-3 py-1 text-sm text-muted-foreground hover:text-sidebar-foreground">Time Logs</a>
                     </div>
                 </div>
 

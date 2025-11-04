@@ -10,15 +10,7 @@ use Illuminate\Http\Request;
 
 class TeamController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware(function ($request, $next) {
-            if (auth()->user()->role !== 'manager' && auth()->user()->role !== 'admin') {
-                abort(403, 'Unauthorized access.');
-            }
-            return $next($request);
-        });
-    }
+  
 
     public function index()
     {

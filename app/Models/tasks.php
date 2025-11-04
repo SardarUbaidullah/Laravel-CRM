@@ -41,10 +41,11 @@ class tasks extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function subtasks()
-    {
-        return $this->hasMany(TaskSubtask::class);
-    }
+public function subtasks()
+{
+    return $this->hasMany(task_subtasks::class, 'task_id');
+}
+
 
     public function comments()
     {
@@ -60,7 +61,10 @@ class tasks extends Model
     {
         return $this->hasMany(TimeLog::class);
     }
-
+ public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
         public function assignedTasks()
 {
