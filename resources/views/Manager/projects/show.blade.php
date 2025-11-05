@@ -309,6 +309,11 @@
                         </svg>
                         <span>View Team</span>
                     </a>
+                     <a href="{{ route('manager.chat.project', $project) }}"
+       class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center text-sm">
+        <i class="fas fa-comments mr-2"></i>
+        Project Chat
+    </a>
                 </div>
             </div>
         </div>

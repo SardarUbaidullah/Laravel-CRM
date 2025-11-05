@@ -75,4 +75,38 @@ public function subtasks()
     return $this->belongsTo(User::class, 'manager_id');
 }
 
+
+
+
+    // Assignee relationship
+
+
+    // Creator relationship
+   
+
+    // Helper methods
+    public function isOverdue()
+    {
+        return $this->due_date && $this->due_date->isPast();
+    }
+
+    public function getPriorityColorAttribute()
+    {
+        return match($this->priority) {
+            'high' => 'red',
+            'medium' => 'yellow',
+            'low' => 'gray',
+            default => 'gray',
+        };
+    }
+
+    public function getStatusColorAttribute()
+    {
+        return match($this->status) {
+            'done' => 'green',
+            'in_progress' => 'blue',
+            'todo' => 'gray',
+            default => 'gray',
+        };
+    }
 }

@@ -9,8 +9,10 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\TimeLogController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\Manager\ChatController;
 use App\Http\Controllers\SubTaskController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Models\Projects as Project;
 
 
 // Manager Controllers
@@ -28,9 +30,54 @@ use App\Http\Controllers\Manager\SubTaskController as ManagerSubTaskController;
 
 // Home
 
+ Route::prefix('chat')->group(function () {
+    Route::get('/', [ChatController::class, 'index'])->name('manager.chat.index');
+    Route::get('/project/{project}', [ChatController::class, 'projectChat'])->name('manager.chat.project');
+    Route::get('/user/{user}', [ChatController::class, 'directChat'])->name('manager.chat.direct');
+    Route::post('/{chatRoom}/send', [ChatController::class, 'sendMessage'])->name('manager.chat.send');
+    Route::post('/{chatRoom}/read', [ChatController::class, 'markAsRead'])->name('manager.chat.read');
+    Route::get('/{chatRoom}/messages', [ChatController::class, 'getMessages'])->name('manager.chat.messages');
+});
+
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
+// Pusher Authentication Route
+Route::post('/pusher/auth', function (Request $request) {
+    $user = auth()->user();
 
+    if (!$user) {
+        return response('Unauthorized', 401);
+    }
+
+    $channelName = $request->channel_name;
+    $socketId = $request->socket_id;
+
+    // Check if user can access this channel
+    if (str_starts_with($channelName, 'private-chat.room.')) {
+        $roomId = str_replace('private-chat.room.', '', $channelName);
+
+        // Check if user has access to this chat room
+        $hasAccess = \App\Models\ChatRoom::where('id', $roomId)
+            ->whereHas('participants', function($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->exists();
+
+        if (!$hasAccess) {
+            return response('Forbidden', 403);
+        }
+    }
+
+    // Generate auth response
+    $pusher = new Pusher\Pusher(
+        config('broadcasting.connections.pusher.key'),
+        config('broadcasting.connections.pusher.secret'),
+        config('broadcasting.connections.pusher.app_id'),
+        config('broadcasting.connections.pusher.options')
+    );
+
+    return $pusher->authorizeChannel($channelName, $socketId);
+})->middleware('auth')->name('pusher.auth');
 /*
 |--------------------------------------------------------------------------
 | Authenticated User Routes
@@ -114,5 +161,7 @@ Route::get('/team', [manager_TeamController::class, 'index'])->name('team.index'
             Route::resource('subtasks', ManagerSubTaskController::class);
         });
     });
+
+
 
 require __DIR__ . '/auth.php';
