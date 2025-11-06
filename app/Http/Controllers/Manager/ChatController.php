@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Manager;
 use App\Http\Controllers\Controller;
 use App\Models\ChatRoom;
 use App\Models\ChatMessage;
-use App\Models\Projects; // Use Projects
+use App\Models\Projects;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,45 +16,92 @@ class ChatController extends Controller
     {
         $user = auth()->user();
 
-        // Get project rooms where user is participant
-        $projectRooms = ChatRoom::where('type', 'project')
-            ->whereHas('participants', function($query) use ($user) {
-                $query->where('user_id', $user->id);
+        if ($user->role === 'user') {
+            // For team members: only show project rooms where they are team members
+            $projectRooms = ChatRoom::where('type', 'project')
+                ->whereHas('participants', function($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })
+                ->whereHas('project', function($query) use ($user) {
+                    $query->whereHas('teamMembers', function($q) use ($user) {
+                        $q->where('user_id', $user->id);
+                    });
+                })
+                ->with(['project', 'messages' => function($query) {
+                    $query->latest()->limit(1);
+                }, 'participants.user'])
+                ->get();
+
+            // Get direct message rooms where user is participant
+            $directRooms = ChatRoom::where('type', 'direct')
+                ->whereHas('participants', function($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })
+                ->with(['messages' => function($query) {
+                    $query->latest()->limit(1);
+                }, 'participants.user'])
+                ->get();
+
+            // Get available users for new DM (managers and super_admin only)
+            $availableUsers = User::where(function($query) use ($user) {
+                // Get managers of projects where user is team member
+                $query->whereHas('managedProjects', function($q) use ($user) {
+                    $q->whereHas('teamMembers', function($teamQuery) use ($user) {
+                        $teamQuery->where('user_id', $user->id);
+                    });
+                })
+                ->orWhere('role', 'super_admin');
             })
-            ->with(['project', 'messages' => function($query) {
-                $query->latest()->limit(1);
-            }, 'participants.user'])
+            ->where('id', '!=', $user->id)
+            ->whereIn('role', ['admin', 'super_admin'])
             ->get();
 
-        // Get direct message rooms
-        $directRooms = ChatRoom::where('type', 'direct')
-            ->whereHas('participants', function($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })
-            ->with(['messages' => function($query) {
-                $query->latest()->limit(1);
-            }, 'participants.user'])
-            ->get();
-
-        // Get users for new DM - UPDATED FOR super_admin, admin, user
-        if ($user->isAdmin() || $user->isSuperAdmin()) {
-            $availableUsers = User::where('id', '!=', $user->id)->get();
         } else {
-            $availableUsers = User::whereIn('role', ['super_admin', 'admin'])->get();
+            // Original logic for admin/super_admin
+            $projectRooms = ChatRoom::where('type', 'project')
+                ->whereHas('participants', function($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })
+                ->with(['project', 'messages' => function($query) {
+                    $query->latest()->limit(1);
+                }, 'participants.user'])
+                ->get();
+
+            $directRooms = ChatRoom::where('type', 'direct')
+                ->whereHas('participants', function($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })
+                ->with(['messages' => function($query) {
+                    $query->latest()->limit(1);
+                }, 'participants.user'])
+                ->get();
+
+            if ($user->isAdmin() || $user->isSuperAdmin()) {
+                $availableUsers = User::where('id', '!=', $user->id)->get();
+            } else {
+                $availableUsers = User::whereIn('role', ['super_admin', 'admin'])->get();
+            }
         }
 
         return view('manager.chat.index', compact('projectRooms', 'directRooms', 'availableUsers'));
     }
 
-    public function projectChat(Projects $project) // Use Projects
+    public function projectChat(Projects $project)
     {
         $user = auth()->user();
 
-        // Check access based on roles
-        if (!$user->canAccessProject($project)) {
-            // Auto-add user to project team if not already (for testing)
+        // Role-based access control
+        if ($user->role === 'user') {
+            // Check if user is team member of this project
             if (!$project->teamMembers->contains('id', $user->id)) {
-                $project->teamMembers()->syncWithoutDetaching([$user->id]);
+                abort(403, 'Access denied. You are not a team member of this project.');
+            }
+        } else {
+            // Original access check for admin/super_admin
+            if (!$user->canAccessProject($project)) {
+                if (!$project->teamMembers->contains('id', $user->id)) {
+                    $project->teamMembers()->syncWithoutDetaching([$user->id]);
+                }
             }
         }
 
@@ -71,9 +118,8 @@ class ChatController extends Controller
         // Add current user to participants if not already
         $chatRoom->participants()->firstOrCreate(['user_id' => $user->id]);
 
-        // Add all project members to chat room (manager + team members)
+        // Add all project members to chat room
         $allMembers = $project->getAllMembers();
-
         foreach ($allMembers as $member) {
             $chatRoom->participants()->firstOrCreate(['user_id' => $member->id]);
         }
@@ -83,7 +129,6 @@ class ChatController extends Controller
             ->orderBy('created_at', 'asc')
             ->paginate(50);
 
-        // Mark messages as read
         $this->markMessagesAsRead($chatRoom, $user);
 
         return view('manager.chat.project-chat', compact('project', 'chatRoom', 'messages'));
@@ -93,9 +138,32 @@ class ChatController extends Controller
     {
         $currentUser = auth()->user();
 
-        // Check if current user can message this user - UPDATED
-        if (!$currentUser->canMessage($user)) {
-            abort(403);
+        // Enhanced role-based access control for direct messaging
+        if ($currentUser->role === 'user') {
+            // Team members can only message their managers and super_admin
+            $canMessage = false;
+
+            // Check if target user is super_admin
+            if ($user->role === 'super_admin') {
+                $canMessage = true;
+            }
+            // Check if target user is manager of any project where current user is team member
+            elseif ($user->role === 'admin') {
+                $canMessage = $user->managedProjects()
+                    ->whereHas('teamMembers', function($query) use ($currentUser) {
+                        $query->where('user_id', $currentUser->id);
+                    })
+                    ->exists();
+            }
+
+            if (!$canMessage) {
+                abort(403, 'You can only message your project managers and super administrators.');
+            }
+        } else {
+            // Original logic for admin/super_admin
+            if (!$currentUser->canMessage($user)) {
+                abort(403);
+            }
         }
 
         // Find or create direct chat room
@@ -115,91 +183,102 @@ class ChatController extends Controller
                 'created_by' => $currentUser->id
             ]);
 
-            // Add both users as participants
             $chatRoom->participants()->createMany([
                 ['user_id' => $currentUser->id],
                 ['user_id' => $user->id]
             ]);
         }
 
-        $messages = $chatRoom->messages()->with('user')->orderBy('created_at', 'asc')->paginate(50);
+        $messages = $chatRoom->messages()
+            ->with('user')
+            ->orderBy('created_at', 'asc')
+            ->paginate(50);
 
-        // Mark messages as read
         $this->markMessagesAsRead($chatRoom, $currentUser);
 
         return view('manager.chat.direct-chat', compact('user', 'chatRoom', 'messages'));
     }
 
- public function sendMessage(Request $request, ChatRoom $chatRoom)
-{
-    $request->validate([
-        'message' => 'required_without:attachment|string|max:1000',
-        'attachment' => 'nullable|file|max:10240'
-    ]);
-
-    $user = auth()->user();
-
-    // Check if user has access to this chat room
-    if (!$user->canAccessChat($chatRoom)) {
-        return response()->json(['error' => 'Access denied'], 403);
-    }
-
-    try {
-        $messageData = [
-            'chat_room_id' => $chatRoom->id,
-            'user_id' => $user->id,
-            'message' => $request->message ?: '[File Attachment]'
-        ];
-
-        if ($request->hasFile('attachment')) {
-            $file = $request->file('attachment');
-            $path = $file->store('chat-attachments', 'public');
-            $messageData['attachment'] = $path;
-            $messageData['attachment_name'] = $file->getClientOriginalName();
-        }
-
-        $message = ChatMessage::create($messageData);
-        $message->load('user');
-
-        // DEBUG: Log before broadcasting
-        \Log::info('Broadcasting message:', ['message_id' => $message->id, 'chat_room_id' => $chatRoom->id]);
-
-        // Broadcast the event - PASS THE MESSAGE OBJECT, NOT ARRAY
-        broadcast(new \App\Events\ChatMessageSent($message))->toOthers();
-
-        // DEBUG: Log after broadcasting
-        \Log::info('Message broadcast completed');
-
-        // Prepare response data
-        $responseData = [
-            'id' => $message->id,
-            'message' => $message->message,
-            'user_id' => $message->user_id,
-            'user' => [
-                'id' => $message->user->id,
-                'name' => $message->user->name,
-                'role' => $message->user->role,
-            ],
-            'attachment' => $message->attachment,
-            'attachment_name' => $message->attachment_name,
-            'created_at' => $message->created_at->toISOString(),
-            'chat_room_id' => $chatRoom->id
-        ];
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Message sent successfully',
-            'message_data' => $responseData
+    public function sendMessage(Request $request, ChatRoom $chatRoom)
+    {
+        $request->validate([
+            'message' => 'required_without:attachment|string|max:1000',
+            'attachment' => 'nullable|file|max:10240'
         ]);
 
-    } catch (\Exception $e) {
-        \Log::error('Message send error:', ['error' => $e->getMessage()]);
-        return response()->json([
-            'success' => false,
-            'error' => 'Failed to send message: ' . $e->getMessage()
-        ], 500);
+        $user = auth()->user();
+
+        // Enhanced access control based on user role
+        if ($user->role === 'user') {
+            if ($chatRoom->type === 'project') {
+                // Check if user is team member of the project
+                if (!$chatRoom->project || !$chatRoom->project->teamMembers->contains('id', $user->id)) {
+                    return response()->json(['error' => 'Access denied'], 403);
+                }
+            } else if ($chatRoom->type === 'direct') {
+                // Check if user is participant in this direct chat
+                $isParticipant = $chatRoom->participants()->where('user_id', $user->id)->exists();
+                if (!$isParticipant) {
+                    return response()->json(['error' => 'Access denied'], 403);
+                }
+            }
+        } else {
+            // Original access check for admin/super_admin
+            if (!$user->canAccessChat($chatRoom)) {
+                return response()->json(['error' => 'Access denied'], 403);
+            }
+        }
+
+        try {
+            $messageData = [
+                'chat_room_id' => $chatRoom->id,
+                'user_id' => $user->id,
+                'message' => $request->message ?: '[File Attachment]'
+            ];
+
+            if ($request->hasFile('attachment')) {
+                $file = $request->file('attachment');
+                $path = $file->store('chat-attachments', 'public');
+                $messageData['attachment'] = $path;
+                $messageData['attachment_name'] = $file->getClientOriginalName();
+            }
+
+            $message = ChatMessage::create($messageData);
+            $message->load('user');
+
+            $responseData = [
+                'id' => $message->id,
+                'message' => $message->message,
+                'user_id' => $message->user_id,
+                'user' => [
+                    'id' => $message->user->id,
+                    'name' => $message->user->name,
+                    'role' => $message->user->role,
+                ],
+                'attachment' => $message->attachment,
+                'attachment_name' => $message->attachment_name,
+                'created_at' => $message->created_at->toISOString(),
+                'chat_room_id' => $chatRoom->id
+            ];
+
+            \Log::info('Broadcasting message:', $responseData);
+            broadcast(new \App\Events\ChatMessageSent($responseData))->toOthers();
+            \Log::info('Message broadcast completed');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Message sent successfully',
+                'message_data' => $responseData
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Message send error:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to send message: ' . $e->getMessage()
+            ], 500);
+        }
     }
-}
 
     private function markMessagesAsRead($chatRoom, $user)
     {
@@ -208,7 +287,6 @@ class ChatController extends Controller
             $participant->update(['last_read_at' => now()]);
         }
 
-        // Mark individual messages as read
         $chatRoom->messages()
             ->where('user_id', '!=', $user->id)
             ->whereNull('read_at')
@@ -219,7 +297,6 @@ class ChatController extends Controller
     {
         $user = auth()->user();
         $this->markMessagesAsRead($chatRoom, $user);
-
         return response()->json(['success' => true]);
     }
 
@@ -227,8 +304,22 @@ class ChatController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user->canAccessChat($chatRoom)) {
-            return response()->json(['error' => 'Access denied'], 403);
+        // Enhanced access control
+        if ($user->role === 'user') {
+            if ($chatRoom->type === 'project') {
+                if (!$chatRoom->project || !$chatRoom->project->teamMembers->contains('id', $user->id)) {
+                    return response()->json(['error' => 'Access denied'], 403);
+                }
+            } else if ($chatRoom->type === 'direct') {
+                $isParticipant = $chatRoom->participants()->where('user_id', $user->id)->exists();
+                if (!$isParticipant) {
+                    return response()->json(['error' => 'Access denied'], 403);
+                }
+            }
+        } else {
+            if (!$user->canAccessChat($chatRoom)) {
+                return response()->json(['error' => 'Access denied'], 403);
+            }
         }
 
         $messages = $chatRoom->messages()

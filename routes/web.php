@@ -9,6 +9,8 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\TimeLogController;
 use App\Http\Controllers\FileController;
+use App\Http\Controllers\TeamOwnController;
+use App\Http\Controllers\TeamChatController;
 use App\Http\Controllers\Manager\ChatController;
 use App\Http\Controllers\SubTaskController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
@@ -30,7 +32,10 @@ use App\Http\Controllers\Manager\SubTaskController as ManagerSubTaskController;
 
 // Home
 
- Route::prefix('chat')->group(function () {
+ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+// Manager routes
+Route::prefix('chat')->group(function () {
     Route::get('/', [ChatController::class, 'index'])->name('manager.chat.index');
     Route::get('/project/{project}', [ChatController::class, 'projectChat'])->name('manager.chat.project');
     Route::get('/user/{user}', [ChatController::class, 'directChat'])->name('manager.chat.direct');
@@ -39,8 +44,24 @@ use App\Http\Controllers\Manager\SubTaskController as ManagerSubTaskController;
     Route::get('/{chatRoom}/messages', [ChatController::class, 'getMessages'])->name('manager.chat.messages');
 });
 
-Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+// Team routes
+Route::prefix('team')->name('team.')->group(function () {
+    Route::get('/', [TeamOwnController::class, 'index'])->name('index');
+    Route::get('/tasks', [TeamOwnController::class, 'tasks'])->name('tasks.index');
+    Route::get('/tasks/{id}', [TeamOwnController::class, 'showTask'])->name('tasks.show');
+    Route::get('/projects', [TeamOwnController::class, 'projects'])->name('projects');
+    Route::get('/profile', [TeamOwnController::class, 'profile'])->name('profile');
 
+    // Team chat routes - using same controller but different route names
+    Route::prefix('chat')->name('chat.')->group(function () {
+        Route::get('/', [ChatController::class, 'index'])->name('index');
+        Route::get('/project/{project}', [ChatController::class, 'projectChat'])->name('project');
+        Route::get('/user/{user}', [ChatController::class, 'directChat'])->name('direct');
+        Route::post('/{chatRoom}/send', [ChatController::class, 'sendMessage'])->name('send');
+        Route::post('/{chatRoom}/read', [ChatController::class, 'markAsRead'])->name('read');
+        Route::get('/{chatRoom}/messages', [ChatController::class, 'getMessages'])->name('messages');
+    });
+});
 // Pusher Authentication Route
 Route::post('/pusher/auth', function (Request $request) {
     $user = auth()->user();

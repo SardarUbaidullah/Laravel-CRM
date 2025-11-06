@@ -90,4 +90,20 @@ class ChatRoom extends Model
     {
         return $query->where('type', 'direct');
     }
+
+    // In ChatRoom model
+public static function getUnreadMessagesCount($userId)
+{
+    return ChatRoom::whereHas('participants', function($query) use ($userId) {
+        $query->where('user_id', $userId);
+    })
+    ->with(['messages' => function($query) use ($userId) {
+        $query->where('user_id', '!=', $userId)
+              ->whereNull('read_at');
+    }])
+    ->get()
+    ->sum(function($room) {
+        return $room->messages->count();
+    });
+}
 }

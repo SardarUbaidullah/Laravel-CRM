@@ -87,79 +87,74 @@ class User extends Authenticatable
     }
 
     // Helper Methods - UPDATED FOR super_admin, admin, user
+  public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
     public function isSuperAdmin()
     {
         return $this->role === 'super_admin';
     }
 
-    public function isAdmin()
-    {
-        return $this->role === 'admin' || $this->role === 'super_admin';
-    }
-
-    public function isManager()
-    {
-        // If you don't have manager role, use admin as manager
-        return $this->role === 'admin' || $this->role === 'super_admin';
-    }
-
-    public function isRegularUser()
+    public function isUser()
     {
         return $this->role === 'user';
     }
 
     public function canAccessProject($project)
     {
-        // Super admin and admin can access everything
-        if ($this->isAdmin() || $this->isSuperAdmin()) {
+        if ($this->isSuperAdmin() || $this->isAdmin()) {
             return true;
         }
 
-        // Regular users can only access projects they're team members of
         return $project->teamMembers->contains('id', $this->id);
+    }
+
+    public function canMessage($user)
+    {
+        if ($this->isSuperAdmin() || $this->isAdmin()) {
+            return true;
+        }
+
+        // For team members, they can only message their managers and super_admin
+        if ($this->isUser()) {
+            if ($user->isSuperAdmin()) {
+                return true;
+            }
+
+            if ($user->isAdmin()) {
+                // Check if this admin manages any project where the user is a team member
+                return $user->managedProjects()
+                    ->whereHas('teamMembers', function($query) {
+                        $query->where('user_id', $this->id);
+                    })
+                    ->exists();
+            }
+
+            return false;
+        }
+
+        return true;
     }
 
     public function canAccessChat($chatRoom)
     {
-        // Super admin and admin can access everything
-        if ($this->isAdmin() || $this->isSuperAdmin()) {
+        if ($this->isSuperAdmin() || $this->isAdmin()) {
             return true;
         }
 
-        // For project chats, check if user is part of the project
-        if ($chatRoom->isProjectChat()) {
-            return $chatRoom->project && (
-                $chatRoom->project->manager_id === $this->id ||
-                $chatRoom->project->teamMembers->contains('id', $this->id) ||
-                $chatRoom->participants->contains('user_id', $this->id)
-            );
+        if ($chatRoom->type === 'project') {
+            return $chatRoom->project && $chatRoom->project->teamMembers->contains('id', $this->id);
         }
 
-        // For direct chats, check if user is a participant
-        if ($chatRoom->isDirectChat()) {
-            return $chatRoom->participants->contains('user_id', $this->id);
+        if ($chatRoom->type === 'direct') {
+            return $chatRoom->participants->contains('id', $this->id);
         }
 
         return false;
     }
 
-    public function canMessage($user)
-    {
-        if ($this->id === $user->id) return false;
-
-        // Super admin and admin can message anyone
-        if ($this->isAdmin() || $this->isSuperAdmin()) return true;
-
-        // Regular users can only message admins and super admins
-        return $user->isAdmin() || $user->isSuperAdmin();
-    }
-
-    // Get all projects user is involved in (managed + team member)
-    public function getAllProjectsAttribute()
-    {
-        $managed = $this->managedProjects;
-        $team = $this->teamProjects;
-
-        return $managed->merge($team)->unique('id');
-    }
+    // Relationship for projects managed by this user (for admins)
+   
 }

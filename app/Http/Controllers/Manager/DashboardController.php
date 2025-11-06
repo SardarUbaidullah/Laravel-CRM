@@ -29,10 +29,47 @@ class DashboardController extends Controller
             case 'admin':
                 return $this->managerDashboard($user);
 
+            case 'user':
+                return $this->teamDashboard($user);
+                break;
+
             default:
                 // Handle other roles or redirect to home
                 return view('home');
         }
+    }
+
+      private function teamDashboard($user)
+    {
+        // Calculate user stats
+        $totalTasks = Tasks::where('assigned_to', $user->id)->count();
+        $completedTasks = Tasks::where('assigned_to', $user->id)->where('status', 'done')->count();
+        $pendingTasks = Tasks::where('assigned_to', $user->id)->whereIn('status', ['todo', 'in_progress'])->count();
+
+        $userStats = [
+            'total_tasks' => $totalTasks,
+            'completed_tasks' => $completedTasks,
+            'pending_tasks' => $pendingTasks,
+            'completion_rate' => $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0,
+        ];
+
+        // Get recent tasks
+        $tasks = Tasks::where('assigned_to', $user->id)
+            ->with('project')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        // Get upcoming deadlines
+        $upcomingDeadlines = Tasks::where('assigned_to', $user->id)
+            ->whereIn('status', ['todo', 'in_progress'])
+            ->where('due_date', '>=', now())
+            ->where('due_date', '<=', now()->addDays(7))
+            ->orderBy('due_date', 'asc')
+            ->limit(3)
+            ->get();
+
+        return view('team.index', compact('userStats', 'tasks', 'upcomingDeadlines'));
     }
 
     private function managerDashboard($user)

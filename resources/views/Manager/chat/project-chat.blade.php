@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -62,24 +63,14 @@
             background: #94a3b8;
         }
 
-        /* Typing indicator animation */
-        @keyframes typing {
-            0% { opacity: 0.3; }
-            50% { opacity: 1; }
-            100% { opacity: 0.3; }
-        }
-        .typing-dot {
-            animation: typing 1.4s infinite ease-in-out;
-        }
-        .typing-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-        .typing-dot:nth-child(3) {
-            animation-delay: 0.4s;
+        /* WhatsApp style background */
+        .whatsapp-bg {
+            background-color: #e5ddd5;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%239C92AC' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100">
+<body class="whatsapp-bg">
     <div class="max-w-7xl mx-auto px-4 py-6">
         <!-- Header -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
@@ -243,6 +234,7 @@
                     <!-- Messages Area -->
                     <div class="flex-1 p-6 overflow-y-auto bg-gradient-to-b from-gray-50 to-blue-50 scrollbar-thin" id="messages-container">
                         <div class="space-y-4" id="messages-list">
+                            <!-- YOUR EXACT ORIGINAL MESSAGE DISPLAY LOGIC -->
                             @foreach($messages as $message)
                             <div class="flex items-start space-x-3 animate-fade-in {{ $message->user_id === auth()->id() ? 'flex-row-reverse space-x-reverse' : '' }}">
                                 <div class="w-10 h-10 {{ $message->user_id === auth()->id() ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-primary-500 to-blue-600' }} rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 shadow-lg transition-transform duration-200 hover:scale-105 cursor-pointer"
@@ -272,31 +264,20 @@
                             </div>
                             @endforeach
                         </div>
-
-                        <!-- Typing Indicator -->
-                        <div id="typing-indicator" class="hidden flex items-start space-x-3 mt-4">
-                            <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 shadow-lg">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <div class="bg-chat-received rounded-2xl px-4 py-3 shadow-lg border border-gray-200">
-                                <div class="flex space-x-1">
-                                    <div class="typing-dot w-2 h-2 bg-gray-500 rounded-full"></div>
-                                    <div class="typing-dot w-2 h-2 bg-gray-500 rounded-full"></div>
-                                    <div class="typing-dot w-2 h-2 bg-gray-500 rounded-full"></div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Message Input -->
                     <div class="border-t border-gray-200 bg-white p-6 shadow-lg">
-                        <div class="flex space-x-4 items-end" id="message-form">
+                        <form id="message-form" class="flex space-x-4 items-end">
+                            @csrf
                             <div class="flex-1 relative">
                                 <textarea
                                     id="message-input"
+                                    name="message"
                                     rows="1"
                                     placeholder="Type your message... (Press Enter to send, Shift+Enter for new line)"
                                     class="w-full px-5 py-4 border-2 border-gray-300 rounded-2xl resize-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 shadow-sm focus:shadow-md bg-gray-50 focus:bg-white"
+                                    required
                                 ></textarea>
                                 <div class="absolute right-3 bottom-3 flex space-x-2">
                                     <span class="text-xs text-gray-400 bg-white px-2 py-1 rounded-full border">
@@ -306,20 +287,20 @@
                             </div>
                             <div class="flex space-x-3">
                                 <label for="attachment" class="cursor-pointer group">
-                                    <input type="file" id="attachment" class="hidden">
+                                    <input type="file" id="attachment" name="attachment" class="hidden">
                                     <span class="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 group-hover:from-purple-600 group-hover:to-pink-700 rounded-xl flex items-center justify-center text-white transition-all duration-200 shadow-lg group-hover:shadow-xl group-hover:scale-105">
                                         <i class="fas fa-paperclip text-lg"></i>
                                     </span>
                                 </label>
                                 <button
-                                    id="send-button"
-                                    type="button"
+                                    type="submit"
                                     class="w-14 h-14 bg-gradient-to-br from-primary-600 to-blue-700 hover:from-primary-700 hover:to-blue-800 rounded-xl flex items-center justify-center text-white transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                                    id="send-button"
                                 >
                                     <i class="fas fa-paper-plane text-lg"></i>
                                 </button>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -334,312 +315,312 @@
         </div>
     </div>
 
-  <script>
-    // REAL-TIME CHAT - FIXED PUSHER CONNECTION
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('🚀 Initializing real-time chat...');
+   <script>
+    // Auto-scroll to bottom
+    const messagesContainer = document.getElementById('messages-container');
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-        const currentUserId = {{ auth()->id() }};
+    // Auto-resize textarea
+    const textarea = document.getElementById('message-input');
+    textarea.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
 
-        let pusher = null;
+    // Send message function
+    async function sendMessage() {
+        const messageInput = document.getElementById('message-input');
+        const attachmentInput = document.getElementById('attachment');
+        const sendButton = document.getElementById('send-button');
 
-        // Auto-scroll to bottom
-        const messagesContainer = document.getElementById('messages-container');
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        const messageText = messageInput.value.trim();
 
-        // Auto-resize textarea
-        const textarea = document.getElementById('message-input');
-        textarea.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-        });
-
-        // Send message function
-        async function sendMessage() {
-            const messageInput = document.getElementById('message-input');
-            const attachmentInput = document.getElementById('attachment');
-            const sendButton = document.getElementById('send-button');
-
-            const messageText = messageInput.value.trim();
-
-            if (!messageText) {
-                showNotification('Please enter a message', 'error');
-                return;
-            }
-
-            // Show sending state
-            const originalHtml = sendButton.innerHTML;
-            sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            sendButton.disabled = true;
-
-            const formData = new FormData();
-            formData.append('message', messageText);
-            formData.append('_token', '{{ csrf_token() }}');
-
-            if (attachmentInput.files[0]) {
-                formData.append('attachment', attachmentInput.files[0]);
-            }
-
-            try {
-                console.log('📤 Sending message...');
-
-                const response = await fetch('{{ route('manager.chat.send', $chatRoom) }}', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
-                    }
-                });
-
-                const data = await response.json();
-                console.log('📥 Server response:', data);
-
-                if (data.success) {
-                    // IMMEDIATELY add message to UI
-                    console.log('✅ Adding message to UI immediately:', data.message_data);
-                    addMessageToChat(data.message_data);
-
-                    // Clear input fields
-                    messageInput.value = '';
-                    attachmentInput.value = '';
-                    messageInput.style.height = 'auto';
-
-                    // Show success state
-                    sendButton.innerHTML = '<i class="fas fa-check"></i>';
-                    setTimeout(() => {
-                        sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
-                        sendButton.disabled = false;
-                    }, 1000);
-
-                } else {
-                    throw new Error(data.error || 'Failed to send message');
-                }
-            } catch (error) {
-                console.error('❌ Error sending message:', error);
-                sendButton.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
-                setTimeout(() => {
-                    sendButton.innerHTML = originalHtml;
-                    sendButton.disabled = false;
-                }, 2000);
-                showNotification('Failed to send message: ' + error.message, 'error');
-            }
+        if (!messageText && !attachmentInput.files[0]) {
+            return;
         }
 
-        // Event listeners
-        const messageForm = document.getElementById('message-form');
-        messageForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            sendMessage();
-            return false;
-        });
+        // Show sending state
+        const originalHtml = sendButton.innerHTML;
+        sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        sendButton.disabled = true;
 
-        textarea.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
+        const formData = new FormData();
+        formData.append('message', messageText);
+        formData.append('_token', '{{ csrf_token() }}');
 
-        // Initialize Pusher - FIXED CONNECTION
-        function initializePusher() {
-            try {
-                console.log('🔧 Initializing Pusher...');
+        if (attachmentInput.files[0]) {
+            formData.append('attachment', attachmentInput.files[0]);
+        }
 
-                // Get credentials from environment
-                const pusherKey = '{{ env('PUSHER_APP_KEY') }}';
-                const pusherCluster = '{{ env('PUSHER_APP_CLUSTER', 'mt1') }}';
+        try {
+            console.log('📤 Sending message...');
 
-                console.log('🔑 Pusher Key:', pusherKey);
-                console.log('📍 Pusher Cluster:', pusherCluster);
-
-                if (!pusherKey) {
-                    throw new Error('Pusher APP_KEY not found in environment');
+            const response = await fetch('{{ route('manager.chat.send', $chatRoom) }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
                 }
+            });
 
-                // Enable debug logging
-                Pusher.logToConsole = true;
+            const data = await response.json();
+            console.log('📥 Server response:', data);
 
-                // Initialize Pusher WITH CORRECT CREDENTIALS
-                pusher = new Pusher(pusherKey, {
-                    cluster: pusherCluster,
-                    forceTLS: true,
-                    encrypted: true
-                });
+            if (data.success) {
+                // ⭐⭐ KEY CHANGE: IMMEDIATELY add message to UI ⭐⭐
+                console.log('✅ Adding message to UI immediately:', data.message_data);
+                addMessageToChat(data.message_data);
 
-                // Subscribe to channel
-                const channelName = 'chat.room.{{ $chatRoom->id }}';
-                console.log('📡 Subscribing to channel:', channelName);
+                // Clear input fields
+                messageInput.value = '';
+                attachmentInput.value = '';
+                messageInput.style.height = 'auto';
 
-                const channel = pusher.subscribe(channelName);
+                // Show success state
+                sendButton.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    sendButton.innerHTML = '<i class="fas fa-paper-plane"></i>';
+                    sendButton.disabled = false;
+                }, 1000);
 
-                // Listen for new messages
-                channel.bind('ChatMessageSent', function (data) {
-    if (data.message) {
-        // Har user ke liye addMessageToChat
-        addMessageToChat(data.message);
-
-        // Agar current user ka message hai to notification mat dikhao
-        if (data.message.user_id !== currentUserId) {
-            playNotificationSound();
-            showNotification(`New message from ${data.message.user.name}`);
+            } else {
+                throw new Error(data.error || 'Failed to send message');
+            }
+        } catch (error) {
+            console.error('❌ Error sending message:', error);
+            sendButton.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+            setTimeout(() => {
+                sendButton.innerHTML = originalHtml;
+                sendButton.disabled = false;
+            }, 2000);
+            showNotification('Failed to send message: ' + error.message, 'error');
         }
     }
-        });
 
-                // Connection events
-                channel.bind('pusher:subscription_succeeded', function() {
-                    console.log('✅ Successfully subscribed to Pusher channel');
-                    updateConnectionStatus('connected');
-                });
+    // Event listeners for form submission
+    const messageForm = document.getElementById('message-form');
+    messageForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        sendMessage();
+        return false;
+    });
 
-                channel.bind('pusher:subscription_error', function(status) {
-                    console.error('❌ Pusher subscription error:', status);
-                    updateConnectionStatus('error');
-                });
+    // ⭐⭐ KEY CHANGE: Enter key handler for immediate sending ⭐⭐
+    textarea.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
 
-                pusher.connection.bind('connected', function() {
-                    console.log('✅ Pusher Connected!');
-                    updateConnectionStatus('connected');
-                });
+    // REAL-TIME WITH PUSHER
+    let lastMessageId = {{ $messages->last() ? $messages->last()->id : 0 }};
+    let isPolling = false;
+    const currentUserId = {{ auth()->id() }};
 
-                pusher.connection.bind('disconnected', function() {
-                    console.log('❌ Pusher Disconnected');
-                    updateConnectionStatus('error');
-                });
+    function initializeRealTime() {
+        console.log('🚀 Initializing real-time chat...');
 
-                pusher.connection.bind('error', function(err) {
-                    console.error('❌ Pusher Connection Error:', err);
-                    updateConnectionStatus('error');
-                });
+        if (typeof Pusher !== 'undefined') {
+            console.log('✅ Pusher is available, setting up real-time...');
 
-                console.log('📡 Pusher initialization complete');
+            // Enable Pusher logging
+            Pusher.logToConsole = true;
 
-            } catch (error) {
-                console.error('❌ Pusher initialization failed:', error);
+            const pusher = new Pusher('{{ env('PUSHER_APP_KEY') }}', {
+                cluster: '{{ env('PUSHER_APP_CLUSTER') }}',
+                encrypted: true,
+                forceTLS: true
+            });
+
+            // Subscribe to channel
+            const channel = pusher.subscribe('chat.room.{{ $chatRoom->id }}');
+
+            // Listen for new messages
+            channel.bind('message.sent', function(data) {
+                console.log('💬 New message received via Pusher:', data);
+
+                // ⭐⭐ KEY CHANGE: Only add messages from other users via Pusher ⭐⭐
+                if (data.message && data.message.user_id !== currentUserId) {
+                    addMessageToChat(data.message);
+                    playNotificationSound();
+                    showNotification(`New message from ${data.message.user.name}`);
+                }
+            });
+
+            // Connection events
+            channel.bind('pusher:subscription_succeeded', function() {
+                console.log('✅ Successfully subscribed to Pusher channel');
+                updateConnectionStatus('connected');
+            });
+
+            channel.bind('pusher:subscription_error', function(status) {
+                console.error('❌ Pusher subscription error:', status);
                 updateConnectionStatus('error');
-                showNotification('Real-time connection failed: ' + error.message, 'error');
-            }
+                setupPollingFallback();
+            });
+
+            console.log('📡 Pusher setup complete');
+
+        } else {
+            console.error('❌ Pusher not available');
+            setupPollingFallback();
         }
+    }
 
-        // Add message to chat UI
-        function addMessageToChat(message) {
-            const isOwnMessage = message.user_id === currentUserId;
+    // Fallback polling
+    function setupPollingFallback() {
+        console.log('🔄 Using polling fallback');
+        updateConnectionStatus('polling');
+        isPolling = true;
 
-            console.log('🖥️ Rendering message:', message);
+        setInterval(pollForNewMessages, 2000);
+        setTimeout(pollForNewMessages, 1000);
+    }
 
-            const messageHtml = `
-                <div class="flex items-start space-x-3 animate-fade-in ${isOwnMessage ? 'flex-row-reverse space-x-reverse' : ''}">
-                    <div class="w-10 h-10 ${isOwnMessage ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-primary-500 to-blue-600'} rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 shadow-lg"
-                         title="${message.user.name} (${message.user.role})">
-                        ${message.user.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div class="flex-1 max-w-md ${isOwnMessage ? 'text-right' : ''}">
-                        <div class="inline-block ${isOwnMessage ? 'bg-chat-sent' : 'bg-chat-received'} rounded-2xl px-4 py-3 shadow-lg border border-gray-200">
-                            <div class="flex items-center space-x-2 mb-2 ${isOwnMessage ? 'flex-row-reverse space-x-reverse' : ''}">
-                                <span class="text-sm font-bold ${isOwnMessage ? 'text-green-800' : 'text-primary-700'}">${message.user.name}</span>
-                                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">${formatTime(message.created_at)}</span>
-                            </div>
-                            <p class="text-gray-800 text-sm">${message.message}</p>
-                            ${message.attachment ? `
-                                <div class="mt-2">
-                                    <a href="/storage/${message.attachment}"
-                                       target="_blank"
-                                       class="inline-flex items-center space-x-2 text-xs text-primary-600 hover:text-primary-700 bg-primary-50 rounded-lg px-3 py-2">
-                                        <i class="fas fa-paperclip"></i>
-                                        <span>${message.attachment_name}</span>
-                                    </a>
-                                </div>
-                            ` : ''}
+    async function pollForNewMessages() {
+        if (!isPolling) return;
+
+        try {
+            const response = await fetch('{{ route('manager.chat.messages', $chatRoom) }}?last_id=' + lastMessageId);
+            const data = await response.json();
+
+            if (data.data && data.data.length > 0) {
+                const newMessages = data.data.filter(msg => msg.id > lastMessageId);
+
+                if (newMessages.length > 0) {
+                    newMessages.forEach(message => {
+                        // ⭐⭐ KEY CHANGE: Only add messages from other users via polling ⭐⭐
+                        if (message.user_id !== currentUserId) {
+                            addMessageToChat(message);
+                        }
+                        lastMessageId = Math.max(lastMessageId, message.id);
+                    });
+
+                    const othersMessages = newMessages.filter(msg => msg.user_id !== currentUserId);
+                    if (othersMessages.length > 0) {
+                        showNotification(`New message from ${othersMessages[0].user.name}`);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Polling error:', error);
+        }
+    }
+
+    // Add message to chat - YOUR EXACT ORIGINAL LOGIC
+    function addMessageToChat(message) {
+        const isOwnMessage = message.user_id === currentUserId;
+
+        const messageHtml = `
+            <div class="flex items-start space-x-3 animate-fade-in ${isOwnMessage ? 'flex-row-reverse space-x-reverse' : ''}">
+                <div class="w-10 h-10 ${isOwnMessage ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-primary-500 to-blue-600'} rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 shadow-lg transition-transform duration-200 hover:scale-105 cursor-pointer"
+                     title="${message.user.name} (${message.user.role})">
+                    ${message.user.name.charAt(0).toUpperCase()}
+                </div>
+                <div class="flex-1 max-w-md ${isOwnMessage ? 'text-right' : ''}">
+                    <div class="inline-block ${isOwnMessage ? 'bg-chat-sent' : 'bg-chat-received'} rounded-2xl px-4 py-3 shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-200">
+                        <div class="flex items-center space-x-2 mb-2 ${isOwnMessage ? 'flex-row-reverse space-x-reverse' : ''}">
+                            <span class="text-sm font-bold ${isOwnMessage ? 'text-green-800' : 'text-primary-700'}">${message.user.name}</span>
+                            <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">${formatTime(message.created_at)}</span>
                         </div>
+                        <p class="text-gray-800 text-sm leading-relaxed">${message.message}</p>
+                        ${message.attachment ? `
+                            <div class="mt-3">
+                                <a href="/storage/${message.attachment}" target="_blank"
+                                   class="inline-flex items-center space-x-2 text-xs text-primary-700 hover:text-primary-800 bg-primary-100 hover:bg-primary-200 rounded-lg px-3 py-2 transition-all duration-200 hover:shadow-md border border-primary-200">
+                                    <i class="fas fa-paperclip"></i>
+                                    <span class="font-medium">${message.attachment_name}</span>
+                                    <i class="fas fa-external-link-alt text-xs"></i>
+                                </a>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
-            `;
+            </div>
+        `;
 
-            document.getElementById('messages-list').insertAdjacentHTML('beforeend', messageHtml);
+        document.getElementById('messages-list').insertAdjacentHTML('beforeend', messageHtml);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-            // Auto-scroll to bottom
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        if (!isOwnMessage) {
+            playNotificationSound();
         }
+    }
 
-        // Format time
-        function formatTime(dateString) {
-            try {
-                const date = new Date(dateString);
-                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            } catch (e) {
-                return 'Just now';
-            }
+    // Format time function
+    function formatTime(dateString) {
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        } catch (e) {
+            return 'Just now';
         }
+    }
 
-        // Helper functions
-        function playNotificationSound() {
-            try {
-                const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==');
-                audio.volume = 0.3;
-                audio.play().catch(e => console.log('Audio play failed'));
-            } catch (e) {
-                console.log('Audio not supported');
-            }
-        }
+    // Helper functions
+    function playNotificationSound() {
+        try {
+            const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==');
+            audio.volume = 0.2;
+            audio.play();
+        } catch (e) {}
+    }
 
-        function showNotification(message, type = 'info') {
-            document.querySelectorAll('.chat-notification').forEach(el => el.remove());
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        const bgColor = type === 'error' ? 'bg-red-500' : 'bg-green-500';
 
-            const notification = document.createElement('div');
-            const bgColor = type === 'error' ? 'bg-red-500' : 'bg-green-500';
+        notification.className = `fixed top-4 right-4 ${bgColor} text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in`;
+        notification.innerHTML = `
+            <div class="flex items-center space-x-2">
+                <i class="fas ${type === 'error' ? 'fa-exclamation-triangle' : 'fa-bell'}"></i>
+                <span class="text-sm">${message}</span>
+            </div>
+        `;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
 
-            notification.className = `chat-notification fixed top-4 right-4 ${bgColor} text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in`;
-            notification.innerHTML = `
-                <div class="flex items-center space-x-2">
-                    <i class="fas ${type === 'error' ? 'fa-exclamation-triangle' : 'fa-bell'}"></i>
-                    <span class="text-sm">${message}</span>
-                </div>
-            `;
-
-            document.body.appendChild(notification);
-            setTimeout(() => notification.remove(), 3000);
-        }
-
-        function updateConnectionStatus(status) {
-            const statusConfig = {
-                'connected': { text: 'Live Connected', color: 'bg-green-500', icon: 'fa-wifi' },
-                'error': { text: 'Connection Error', color: 'bg-red-500', icon: 'fa-exclamation-triangle' }
-            };
-
-            const config = statusConfig[status] || statusConfig.error;
-            const statusElement = document.getElementById('connection-status');
-            const connectionText = document.getElementById('connection-text');
-
-            if (statusElement) {
-                statusElement.className = `fixed bottom-4 left-4 ${config.color} text-white px-3 py-2 rounded-lg shadow-lg z-40`;
-                statusElement.innerHTML = `
-                    <div class="flex items-center space-x-2">
-                        <i class="fas ${config.icon}"></i>
-                        <span class="text-sm font-medium">${config.text}</span>
-                    </div>
-                `;
-            }
-
-            if (connectionText) {
-                connectionText.textContent = config.text;
-            }
-        }
-
-        // Start everything
-        initializePusher();
-        textarea.focus();
-
-        // Debug functions
-        window.debugChat = function() {
-            console.log('=== CHAT DEBUG ===');
-            console.log('Current User ID:', currentUserId);
-            console.log('Chat Room ID:', '{{ $chatRoom->id }}');
-            console.log('Pusher Key:', '{{ env('PUSHER_APP_KEY') }}');
-            console.log('Pusher Cluster:', '{{ env('PUSHER_APP_CLUSTER', 'mt1') }}');
-            console.log('Messages in DOM:', document.getElementById('messages-list').children.length);
+    function updateConnectionStatus(status) {
+        const statusConfig = {
+            'connected': { text: 'Live Connected', color: 'bg-green-500', icon: 'fa-wifi' },
+            'polling': { text: 'Polling Active', color: 'bg-blue-500', icon: 'fa-sync' },
+            'error': { text: 'Connection Error', color: 'bg-red-500', icon: 'fa-exclamation-triangle' }
         };
+
+        const config = statusConfig[status] || statusConfig.error;
+        const statusElement = document.getElementById('connection-status');
+        const connectionText = document.getElementById('connection-text');
+
+        if (statusElement) {
+            statusElement.className = `fixed bottom-4 left-4 ${config.color} text-white px-3 py-2 rounded-lg shadow-lg z-40`;
+            statusElement.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <i class="fas ${config.icon}"></i>
+                    <span class="text-sm font-medium">${config.text}</span>
+                </div>
+            `;
+        }
+
+        if (connectionText) {
+            connectionText.textContent = config.text;
+        }
+    }
+
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 Chat page loaded');
+        initializeRealTime();
+        textarea.focus();
+    });
+
+    // Stop polling when tab is hidden
+    document.addEventListener('visibilitychange', function() {
+        isPolling = !document.hidden;
+        if (isPolling) pollForNewMessages();
     });
 </script>
 </body>
