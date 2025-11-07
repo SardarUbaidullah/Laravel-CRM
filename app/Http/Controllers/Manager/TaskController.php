@@ -100,32 +100,39 @@ class TaskController extends Controller
         return view('manager.tasks.create', compact('projects', 'users', 'selectedProject'));
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'project_id' => ['required', Rule::exists('projects', 'id')->where('manager_id', auth()->id())],
-            'assigned_to' => ['nullable', 'exists:users,id'],
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'priority' => ['nullable', Rule::in(['low', 'medium', 'high'])],
-            'status' => ['nullable', Rule::in(['todo', 'in_progress', 'done'])],
-            'due_date' => ['nullable', 'date'],
-        ]);
+   public function store(Request $request)
+{
+    $request->validate([
+        'project_id' => ['required', Rule::exists('projects', 'id')->where('manager_id', auth()->id())],
+        'assigned_to' => ['nullable', 'exists:users,id'],
+        'title' => ['required', 'string', 'max:255'],
+        'description' => ['nullable', 'string'],
+        'priority' => ['nullable', Rule::in(['low', 'medium', 'high'])],
+        'status' => ['nullable', Rule::in(['todo', 'in_progress', 'done'])],
+        'due_date' => ['nullable', 'date'],
+    ]);
 
-        Tasks::create([
-            'project_id' => $request->project_id,
-            'assigned_to' => $request->assigned_to,
-            'created_by' => auth()->id(),
-            'title' => $request->title,
-            'description' => $request->description,
-            'priority' => $request->priority ?? 'medium',
-            'status' => $request->status ?? 'todo',
-            'due_date' => $request->due_date,
-        ]);
+    $task = Tasks::create([
+        'project_id' => $request->project_id,
+        'assigned_to' => $request->assigned_to,
+        'created_by' => auth()->id(),
+        'title' => $request->title,
+        'description' => $request->description,
+        'priority' => $request->priority ?? 'medium',
+        'status' => $request->status ?? 'todo',
+        'due_date' => $request->due_date,
+    ]);
 
-        return redirect()->route('manager.tasks.index')
-                        ->with('success', 'Task created successfully!');
+    if ($request->assigned_to) {
+        $project = $task->project;
+        if ($project) {
+            $project->teamMembers()->syncWithoutDetaching([$request->assigned_to]);
+        }
     }
+
+    return redirect()->route('manager.tasks.index')
+                    ->with('success', 'Task created successfully!');
+}
 
     public function show($id)
     {

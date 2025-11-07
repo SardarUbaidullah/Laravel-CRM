@@ -30,10 +30,11 @@ class tasks extends Model
 ];
 
 
-    public function project()
-    {
-        return $this->belongsTo(Projects::class);
-    }
+   public function project()
+{
+    return $this->belongsTo(Projects::class, 'project_id');
+}
+
 
     public function assignee()
     {
@@ -82,7 +83,7 @@ public function subtasks()
 
 
     // Creator relationship
-   
+
 
     // Helper methods
     public function isOverdue()

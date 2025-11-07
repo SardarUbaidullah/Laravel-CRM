@@ -156,5 +156,5 @@ class User extends Authenticatable
     }
 
     // Relationship for projects managed by this user (for admins)
-   
+
 }

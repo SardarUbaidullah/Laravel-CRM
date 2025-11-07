@@ -43,6 +43,7 @@ Route::prefix('chat')->group(function () {
     Route::post('/{chatRoom}/read', [ChatController::class, 'markAsRead'])->name('manager.chat.read');
     Route::get('/{chatRoom}/messages', [ChatController::class, 'getMessages'])->name('manager.chat.messages');
 });
+Route::put('/password', [PasswordController::class, 'update'])->name('password.update');
 
 // Team routes
 Route::prefix('team')->name('team.')->group(function () {
