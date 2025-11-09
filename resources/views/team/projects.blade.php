@@ -15,7 +15,7 @@
                             <h1 class="text-3xl font-bold text-gray-900 tracking-tight">My Projects</h1>
                             <p class="text-gray-600 mt-1 flex items-center">
                                 <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                                Projects you're actively working on
+                                Projects you're working on
                             </p>
                         </div>
                     </div>
@@ -27,18 +27,7 @@
                         <div class="text-2xl font-bold text-gray-900">{{ $projects->count() }}</div>
                         <div class="text-sm text-gray-500">Total Projects</div>
                     </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-blue-600">
-                            {{ $projects->where('status', 'in_progress')->count() }}
-                        </div>
-                        <div class="text-sm text-gray-500">In Progress</div>
-                    </div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-green-600">
-                            {{ $projects->where('status', 'completed')->count() }}
-                        </div>
-                        <div class="text-sm text-gray-500">Completed</div>
-                    </div>
+
                 </div>
             </div>
         </div>
@@ -233,40 +222,7 @@
         @endif
 
         <!-- Quick Stats Footer -->
-        @if($projects->count() > 0)
-        <div class="mt-8 bg-white rounded-2xl border border-gray-200/60 shadow-sm p-6">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-indigo-600">{{ $totalProjectsCount ?? $projects->count() }}</div>
-                    <div class="text-sm text-gray-600">Total Projects</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-blue-600">
-                        {{ $projects->where('status', 'in_progress')->count() }}
-                    </div>
-                    <div class="text-sm text-gray-600">Active Projects</div>
-                </div>
-                <div class="text-center">
-                    @php
-                        $totalTasks = $projects->sum(function($project) {
-                            return $project->tasks->where('assigned_to', auth()->id())->count();
-                        });
-                        $completedTasks = $projects->sum(function($project) {
-                            return $project->tasks->where('assigned_to', auth()->id())->where('status', 'completed')->count();
-                        });
-                    @endphp
-                    <div class="text-2xl font-bold text-green-600">{{ $completedTasks }}/{{ $totalTasks }}</div>
-                    <div class="text-sm text-gray-600">Tasks Completed</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-purple-600">
-                        {{ $projects->where('due_date', '<', now())->where('status', '!=', 'completed')->count() }}
-                    </div>
-                    <div class="text-sm text-gray-600">Projects Due</div>
-                </div>
-            </div>
-        </div>
-        @endif
+    
     </div>
 </div>
 

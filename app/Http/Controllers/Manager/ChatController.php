@@ -12,80 +12,81 @@ use Illuminate\Support\Facades\DB;
 
 class ChatController extends Controller
 {
-    public function index()
-    {
-        $user = auth()->user();
+  public function index()
+{
+    $user = auth()->user();
 
-        if ($user->role === 'user') {
-            // For team members: only show project rooms where they are team members
-            $projectRooms = ChatRoom::where('type', 'project')
-                ->whereHas('participants', function($query) use ($user) {
-                    $query->where('user_id', $user->id);
-                })
-                ->whereHas('project', function($query) use ($user) {
-                    $query->whereHas('teamMembers', function($q) use ($user) {
-                        $q->where('user_id', $user->id);
-                    });
-                })
-                ->with(['project', 'messages' => function($query) {
-                    $query->latest()->limit(1);
-                }, 'participants.user'])
-                ->get();
+    // Debug: Check what projects user has access to
+    \Log::info('User accessing chat index', [
+        'user_id' => $user->id,
+        'role' => $user->role,
+        'name' => $user->name
+    ]);
 
-            // Get direct message rooms where user is participant
-            $directRooms = ChatRoom::where('type', 'direct')
-                ->whereHas('participants', function($query) use ($user) {
-                    $query->where('user_id', $user->id);
-                })
-                ->with(['messages' => function($query) {
-                    $query->latest()->limit(1);
-                }, 'participants.user'])
-                ->get();
-
-            // Get available users for new DM (managers and super_admin only)
-            $availableUsers = User::where(function($query) use ($user) {
-                // Get managers of projects where user is team member
-                $query->whereHas('managedProjects', function($q) use ($user) {
-                    $q->whereHas('teamMembers', function($teamQuery) use ($user) {
-                        $teamQuery->where('user_id', $user->id);
-                    });
-                })
-                ->orWhere('role', 'super_admin');
+    // Get project rooms based on user role
+    if ($user->role === 'admin') {
+        // For managers: only show projects where they are the manager
+        $projectRooms = ChatRoom::where('type', 'project')
+            ->whereHas('project', function($query) use ($user) {
+                $query->where('manager_id', $user->id);
             })
-            ->where('id', '!=', $user->id)
-            ->whereIn('role', ['admin', 'super_admin'])
+            ->whereHas('participants', function($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->with(['project', 'messages' => function($query) {
+                $query->latest()->limit(1);
+            }, 'participants.user'])
             ->get();
 
-        } else {
-            // Original logic for admin/super_admin
-            $projectRooms = ChatRoom::where('type', 'project')
-                ->whereHas('participants', function($query) use ($user) {
-                    $query->where('user_id', $user->id);
-                })
-                ->with(['project', 'messages' => function($query) {
-                    $query->latest()->limit(1);
-                }, 'participants.user'])
-                ->get();
+        \Log::info('Admin project rooms', [
+            'count' => $projectRooms->count(),
+            'projects' => $projectRooms->pluck('project.name')
+        ]);
 
-            $directRooms = ChatRoom::where('type', 'direct')
-                ->whereHas('participants', function($query) use ($user) {
-                    $query->where('user_id', $user->id);
-                })
-                ->with(['messages' => function($query) {
-                    $query->latest()->limit(1);
-                }, 'participants.user'])
-                ->get();
+    } else if ($user->role === 'super_admin') {
+        // For super_admin: show ALL project chats
+        $projectRooms = ChatRoom::where('type', 'project')
+            ->with(['project', 'messages' => function($query) {
+                $query->latest()->limit(1);
+            }, 'participants.user'])
+            ->get();
 
-            if ($user->isAdmin() || $user->isSuperAdmin()) {
-                $availableUsers = User::where('id', '!=', $user->id)->get();
-            } else {
-                $availableUsers = User::whereIn('role', ['super_admin', 'admin'])->get();
-            }
-        }
+        \Log::info('Super Admin project rooms', [
+            'count' => $projectRooms->count(),
+            'projects' => $projectRooms->pluck('project.name')
+        ]);
 
-        return view('manager.chat.index', compact('projectRooms', 'directRooms', 'availableUsers'));
+    } else {
+        // For users: show projects where they are team members
+        $projectRooms = ChatRoom::where('type', 'project')
+            ->whereHas('participants', function($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+            ->with(['project', 'messages' => function($query) {
+                $query->latest()->limit(1);
+            }, 'participants.user'])
+            ->get();
     }
 
+    // Get direct message rooms
+    $directRooms = ChatRoom::where('type', 'direct')
+        ->whereHas('participants', function($query) use ($user) {
+            $query->where('user_id', $user->id);
+        })
+        ->with(['messages' => function($query) {
+            $query->latest()->limit(1);
+        }, 'participants.user'])
+        ->get();
+
+    // Get available users for new DM
+    if ($user->isAdmin() || $user->isSuperAdmin()) {
+        $availableUsers = User::where('id', '!=', $user->id)->get();
+    } else {
+        $availableUsers = User::whereIn('role', ['super_admin', 'admin'])->get();
+    }
+
+    return view('manager.chat.index', compact('projectRooms', 'directRooms', 'availableUsers'));
+}
     public function projectChat(Projects $project)
     {
         $user = auth()->user();

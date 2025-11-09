@@ -7,6 +7,8 @@ use App\Models\Projects;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Tasks;
 use App\Models\User;
+use App\Models\milestones;
+use App\Models\Comment;
 use App\Models\TimeLogs;
 use App\Models\TaskSubtasks;
 use Illuminate\Http\Request;
@@ -20,25 +22,78 @@ class DashboardController extends Controller
             return view('home');
         }
 
-        $user = Auth::user();
+       $user = Auth::user();
 
-        switch ($user->role) {
-            case 'super_admin':
-                return view('admin.dashboard');
+switch ($user->role) {
+    case 'super_admin':
+        return view('admin.dashboard');
 
-            case 'admin':
-                return $this->managerDashboard($user);
+    case 'admin':
+        return $this->managerDashboard($user);
 
-            case 'user':
-                return $this->teamDashboard($user);
-                break;
+    case 'manager':
+        return $this->managerDashboard($user); // Add manager case
 
-            default:
-                // Handle other roles or redirect to home
-                return view('home');
-        }
+    case 'user':
+        return $this->teamDashboard($user);
+
+    case 'client':
+        return $this->clientDashboard($user); // Add client case
+
+    default:
+        return view('home');
+}
     }
 
+
+
+    private function clientDashboard($user)
+{
+    // Get client's projects and data for dashboard
+    $projects = Projects::where('client_id', $user->client_id)
+        ->withCount(['tasks', 'completedTasks'])
+
+        ->get();
+
+    $recentActivities = $this->getClientRecentActivities($user);
+    $upcomingDeadlines = $this->getClientUpcomingDeadlines($user);
+
+    return view('client.dashboard', compact('projects', 'recentActivities', 'upcomingDeadlines'));
+}
+
+  private function getClientRecentActivities($user)
+    {
+        // Get recent comments and activities for client's projects
+        $projectComments = Comment::whereHasMorph(
+            'commentable',
+            [Projects::class], // Use Projects::class instead of Project::class
+            function($query) use ($user) {
+                $query->where('client_id', $user->client_id);
+            }
+        )->with(['user', 'commentable'])->latest()->limit(10)->get();
+
+        $taskComments = Comment::whereHasMorph(
+            'commentable',
+            [Tasks::class],
+            function($query) use ($user) {
+                $query->whereHas('project', function($q) use ($user) {
+                    $q->where('client_id', $user->client_id);
+                });
+            }
+        )->with(['user', 'commentable.project'])->latest()->limit(10)->get();
+
+        return $projectComments->merge($taskComments)->sortByDesc('created_at')->take(10);
+    }
+
+    private function getClientUpcomingDeadlines($user)
+    {
+          $tasks = Tasks::whereHas('project', function($query) use ($user) {
+        $query->where('client_id', $user->client_id);
+    })->where('due_date', '>=', now())->orderBy('due_date')->limit(5)->get();
+
+    // return $milestones->merge($tasks)->sortBy('due_date')->take(5);
+    return $tasks->sortBy('due_date')->take(5); // Just return tasks
+    }
       private function teamDashboard($user)
     {
         // Calculate user stats

@@ -117,15 +117,16 @@
                 </div>
 
                 <!-- Due Date -->
-                <div class="md:col-span-2">
-                    <label for="due_date" class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
-                    <input type="date"
-                           name="due_date"
-                           id="due_date"
-                           value="{{ old('due_date', $task->due_date) }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
-                    <p class="text-xs text-gray-500 mt-1">Leave empty if no due date</p>
-                </div>
+               <!-- Due Date -->
+<div class="md:col-span-2">
+    <label for="due_date" class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+    <input type="date"
+           name="due_date"
+           id="due_date"
+           value="{{ old('due_date', $task->due_date ? \Carbon\Carbon::parse($task->due_date)->format('Y-m-d') : '') }}"
+           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+    <p class="text-xs text-gray-500 mt-1">Leave empty if no due date</p>
+</div>
             </div>
 
             <!-- Description -->

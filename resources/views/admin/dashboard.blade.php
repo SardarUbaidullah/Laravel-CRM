@@ -321,7 +321,7 @@
                             <i class="fas fa-clock text-primary"></i>
                         </div>
                         <div class="text-right">
-                            <div class="text-lg font-bold text-black">{{ \App\Models\time_logs::count() }}</div>
+                            <div class="text-lg font-bold text-black">{{ \App\Models\Timelog::count() }}</div>
                             <div class="flex items-center space-x-1 text-xs text-primary">
                                 <i class="fas fa-arrow-up text-xs"></i>
                                 <span>logs</span>
@@ -329,10 +329,7 @@
                         </div>
                     </div>
                     <h3 class="text-sm font-medium text-black mb-1">Time Logs</h3>
-                    <span class="status-badge status-healthy inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                        <i class="fas fa-check-circle mr-1 text-xs"></i>
-                        {{ \App\Models\time_logs::sum('hours') }} hours
-                    </span>
+                   
                 </div>
 
                 <!-- Subtasks -->

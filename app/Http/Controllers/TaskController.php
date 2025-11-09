@@ -39,9 +39,9 @@ class TaskController extends Controller
             'start_date'  => ['nullable','date'],
             'due_date'    => ['nullable','date'],
         ]);
+        $task = Tasks::create($data);
 
-        Tasks::create($data);
-
+            $task->addUserToProjectChat();
         return redirect()->route('tasks.index')->with('success', 'Task created successfully');
     }
 
@@ -93,6 +93,9 @@ class TaskController extends Controller
         ]);
 
         $task->update($data);
+
+    $task->addUserToProjectChat();
+
 
         return redirect()->route('tasks.index')->with('success', 'Task updated successfully');
     }

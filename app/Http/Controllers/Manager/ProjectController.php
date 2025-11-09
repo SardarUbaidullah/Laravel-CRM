@@ -6,40 +6,36 @@ use Illuminate\Support\Facades\Auth;
 
 use App\Models\Projects;
 use App\Models\User;
+use App\Models\Tasks;
 use Illuminate\Http\Request;
 
 class ProjectController extends Controller
 {
     // GET /projects
-    public function index()
+      public function index()
     {
-        $projects = Projects::where('manager_id', auth()->id())
-                       ->withCount(['tasks'])
-                       ->with(['tasks' => function($query) {
-                           $query->select('project_id', 'status');
-                       }])
-                       ->latest()
-                       ->get();
+        $user = auth()->user();
 
-        // Calculate additional statistics
-        $totalTasks = \App\Models\Tasks::whereHas('project', function($query) {
-            $query->where('manager_id', auth()->id());
+        // Get projects where user is manager
+        $projects = Projects::where('manager_id', $user->id)
+            ->with(['tasks', 'teamMembers'])
+            ->latest()
+            ->get();
+
+        // Calculate statistics
+        $totalTasks = Tasks::whereHas('project', function($query) use ($user) {
+            $query->where('manager_id', $user->id);
         })->count();
 
-        $teamMembersCount = \App\Models\User::whereHas('assignedTasks', function($query) {
-            $query->whereHas('project', function($q) {
-                $q->where('manager_id', auth()->id());
+        $teamMembersCount = User::whereHas('assignedTasks', function($query) use ($user) {
+            $query->whereHas('project', function($q) use ($user) {
+                $q->where('manager_id', $user->id);
             });
         })->distinct()->count();
 
-        $tem_Members = User::whereHas('assignedTasks', function($q){
-            $q->whereHas('project',function($query){
-                $query->where('managed_id', auth()->id());
-            });
-        });
-
-        return view('manager.projects.index', compact('projects', 'totalTasks', 'teamMembersCount','tem_Members'));
+        return view('manager.projects.index', compact('projects', 'totalTasks', 'teamMembersCount'));
     }
+
 
     // Running Projects
     public function running()
@@ -166,6 +162,24 @@ class ProjectController extends Controller
         $project->update(['status' => 'in_progress']);
 
         return redirect()->back()
-                        ->with('success', 'Project marked as in progress!');
+            ->with('success', 'Project marked as in progress!');
     }
+
+    public function updateStatus(Request $request, Projects $project)
+{
+    try {
+        $validated = $request->validate([
+            'status' => 'required|in:pending,in_progress,completed'
+        ]);
+
+        $project->update([
+            'status' => $validated['status']
+        ]);
+
+        return redirect()->back()->with('success', 'Project status updated successfully');
+
+    } catch (\Exception $e) {
+        return redirect()->back()->with('error', 'Failed to update project status');
+    }
+}
 }

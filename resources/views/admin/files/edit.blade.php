@@ -1,17 +1,24 @@
-@extends("admin.layouts.app")
+@php
+    $layout = match(Auth::user()->role) {
+        'super_admin' => 'admin.layouts.app',
+        'admin' => 'Manager.layouts.app',
+        'user' => 'team.app',
 
-@section("content")
+    };
+@endphp
+
+@extends($layout)
 <div class="max-w-6xl mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-8">
         <div>
             <h1 class="text-3xl font-bold text-gray-900">Edit File</h1>
             <p class="text-gray-600 mt-2">Update file information and metadata</p>
         </div>
-        <a href="{{ route('files.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition duration-200 flex items-center">
+        <a href="{{ route('files.show', $file->id) }}" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition duration-200 flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
             </svg>
-            Back to Files
+            Back to File
         </a>
     </div>
 
@@ -60,7 +67,7 @@
                     </div>
 
                     <div>
-                        <label for="file_name" class="block text-sm font-medium text-gray-700 mb-2">File Name</label>
+                        <label for="file_name" class="block text-sm font-medium text-gray-700 mb-2">File Name *</label>
                         <input
                             type="text"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
@@ -68,11 +75,13 @@
                             name="file_name"
                             value="{{ old('file_name', $file->file_name) }}"
                             placeholder="Enter file name"
+                            required
                         >
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Project Selection -->
                     <div>
                         <label for="project_id" class="block text-sm font-medium text-gray-700 mb-2">Project</label>
                         <select
@@ -84,11 +93,18 @@
                             @foreach($projects as $project)
                                 <option value="{{ $project->id }}" {{ old('project_id', $file->project_id) == $project->id ? 'selected' : '' }}>
                                     {{ $project->name }}
+                                    @if(auth()->user()->role === 'admin')
+                                    (Manager)
+                                    @endif
                                 </option>
                             @endforeach
                         </select>
+                        @if(auth()->user()->role === 'user')
+                        <p class="mt-2 text-sm text-gray-500">You can only assign to projects where you have assigned tasks.</p>
+                        @endif
                     </div>
 
+                    <!-- Task Selection -->
                     <div>
                         <label for="task_id" class="block text-sm font-medium text-gray-700 mb-2">Task</label>
                         <select
@@ -99,32 +115,35 @@
                             <option value="">Select Task</option>
                             @foreach($tasks as $task)
                                 <option value="{{ $task->id }}" {{ old('task_id', $file->task_id) == $task->id ? 'selected' : '' }}>
-                                    {{ $task->title }}
+                                    {{ $task->title }} - {{ $task->project->name }}
                                 </option>
                             @endforeach
                         </select>
+                        @if(auth()->user()->role === 'user')
+                        <p class="mt-2 text-sm text-gray-500">You can only assign to tasks assigned to you.</p>
+                        @endif
                     </div>
+                </div>
 
-                    <div>
-                        <label for="user_id" class="block text-sm font-medium text-gray-700 mb-2">Uploaded By</label>
-                        <select
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                            id="user_id"
-                            name="user_id"
-                        >
-                            <option value="">Select User</option>
-                            @foreach($users as $user)
-                                <option value="{{ $user->id }}" {{ old('user_id', $file->user_id) == $user->id ? 'selected' : '' }}>
-                                    {{ $user->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                <!-- Uploaded By (Display only, cannot change) -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Uploaded By</label>
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                            {{ strtoupper(substr($file->user->name, 0, 1)) }}
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{{ $file->user->name }}</p>
+                            <p class="text-xs text-gray-500">{{ $file->user->email }}</p>
+                        </div>
                     </div>
+                    <input type="hidden" name="user_id" value="{{ $file->user_id }}">
+                    <p class="mt-2 text-sm text-gray-500">Uploader cannot be changed after file creation.</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label for="version" class="block text-sm font-medium text-gray-700 mb-2">Version</label>
+                        <label for="version" class="block text-sm font-medium text-gray-700 mb-2">Version *</label>
                         <input
                             type="number"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
@@ -133,17 +152,29 @@
                             value="{{ old('version', $file->version) }}"
                             min="1"
                             placeholder="Enter version number"
+                            required
                         >
+                    </div>
+
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea
+                            name="description"
+                            id="description"
+                            rows="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                            placeholder="Enter file description..."
+                        >{{ old('description', $file->description) }}</textarea>
                     </div>
                 </div>
 
                 <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
-                    <a href="{{ route('files.index') }}" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-200 font-medium">
+                    <a href="{{ route('files.show', $file->id) }}" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-200 font-medium">
                         Cancel
                     </a>
                     <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 font-medium flex items-center">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                         </svg>
                         Update File
                     </button>
@@ -152,4 +183,48 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const projectSelect = document.getElementById('project_id');
+    const taskSelect = document.getElementById('task_id');
+
+    if (projectSelect && taskSelect) {
+        projectSelect.addEventListener('change', function() {
+            const projectId = this.value;
+            const currentTasks = @json($tasks->keyBy('id')->toArray());
+
+            // Clear and disable task select
+            taskSelect.innerHTML = '<option value="">Select Task</option>';
+
+            if (projectId) {
+                // Filter tasks by selected project
+                Object.values(currentTasks).forEach(task => {
+                    if (task.project_id == projectId) {
+                        const option = new Option(
+                            task.title + ' - ' + task.project.name,
+                            task.id
+                        );
+                        taskSelect.add(option);
+                    }
+                });
+            }
+        });
+
+        // Trigger change event on page load to set initial tasks
+        const initialProjectId = projectSelect.value;
+        if (initialProjectId) {
+            projectSelect.dispatchEvent(new Event('change'));
+
+            // Set the initial task value after populating tasks
+            setTimeout(() => {
+                const initialTaskId = '{{ old("task_id", $file->task_id) }}';
+                if (initialTaskId) {
+                    taskSelect.value = initialTaskId;
+                }
+            }, 100);
+        }
+    }
+});
+</script>
 @endsection

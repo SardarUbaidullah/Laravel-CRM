@@ -2,49 +2,41 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
         'role',
+        'client_id',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    // ==================== RELATIONSHIPS ====================
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
     }
 
     public function managedProjects()
@@ -54,12 +46,12 @@ class User extends Authenticatable
 
     public function assignedTasks()
     {
-        return $this->hasMany(tasks::class, 'assigned_to');
+        return $this->hasMany(Tasks::class, 'assigned_to');
     }
 
     public function createdTasks()
     {
-        return $this->hasMany(tasks::class, 'created_by');
+        return $this->hasMany(Tasks::class, 'created_by');
     }
 
     // Chat Relationships
@@ -86,75 +78,224 @@ class User extends Authenticatable
                     ->withTimestamps();
     }
 
-    // Helper Methods - UPDATED FOR super_admin, admin, user
-  public function isAdmin()
+    // Comments Relationship
+    public function comments()
     {
-        return $this->role === 'admin';
+        return $this->hasMany(Comment::class);
     }
+
+    // ==================== ROLE METHODS ====================
 
     public function isSuperAdmin()
     {
         return $this->role === 'super_admin';
     }
 
-    public function isUser()
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isManager()
+    {
+        return $this->role === 'manager';
+    }
+
+    public function isTeamMember()
     {
         return $this->role === 'user';
     }
 
-    public function canAccessProject($project)
+    public function isClient()
     {
-        if ($this->isSuperAdmin() || $this->isAdmin()) {
-            return true;
-        }
-
-        return $project->teamMembers->contains('id', $this->id);
+        return $this->role === 'client';
     }
 
-    public function canMessage($user)
+    // ==================== ACCESS CONTROL METHODS ====================
+
+    public function canAccessProject(Projects $project)
     {
+        // Super Admin & Admin can access all projects
         if ($this->isSuperAdmin() || $this->isAdmin()) {
             return true;
         }
 
-        // For team members, they can only message their managers and super_admin
-        if ($this->isUser()) {
-            if ($user->isSuperAdmin()) {
+        // Manager can access projects they manage
+        if ($this->isManager() && $project->manager_id === $this->id) {
+            return true;
+        }
+
+        // Team Member can access projects they're assigned to
+        if ($this->isTeamMember() && $project->teamMembers->contains('id', $this->id)) {
+            return true;
+        }
+
+        // Client can access their own projects
+        if ($this->isClient() && $project->client_id === $this->client_id) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function canMessage(User $recipient)
+    {
+        // Cannot message yourself
+        if ($this->id === $recipient->id) {
+            return false;
+        }
+
+        // Super Admin can message anyone
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        // Admin can message anyone except Super Admin
+        if ($this->isAdmin()) {
+            return !$recipient->isSuperAdmin();
+        }
+
+        // Manager can message anyone except Super Admin
+        if ($this->isManager()) {
+            return !$recipient->isSuperAdmin();
+        }
+
+        // Team Member can only message Managers, Admin, and Super Admin
+        if ($this->isTeamMember()) {
+            return $recipient->isManager() || $recipient->isAdmin() || $recipient->isSuperAdmin();
+        }
+
+        // Client can only message their project managers and admins
+        if ($this->isClient()) {
+            // Client can message admins and super admins
+            if ($recipient->isAdmin() || $recipient->isSuperAdmin()) {
                 return true;
             }
 
-            if ($user->isAdmin()) {
-                // Check if this admin manages any project where the user is a team member
-                return $user->managedProjects()
-                    ->whereHas('teamMembers', function($query) {
-                        $query->where('user_id', $this->id);
-                    })
+            // Client can message managers who manage their projects
+            if ($recipient->isManager()) {
+                return $recipient->managedProjects()
+                    ->where('client_id', $this->client_id)
                     ->exists();
             }
 
             return false;
         }
 
-        return true;
+        return false;
     }
 
-    public function canAccessChat($chatRoom)
+    public function canAccessChat(ChatRoom $chatRoom)
     {
+        // Super Admin & Admin can access all chats
         if ($this->isSuperAdmin() || $this->isAdmin()) {
             return true;
         }
 
         if ($chatRoom->type === 'project') {
-            return $chatRoom->project && $chatRoom->project->teamMembers->contains('id', $this->id);
+            return $this->canAccessProject($chatRoom->project);
         }
 
         if ($chatRoom->type === 'direct') {
-            return $chatRoom->participants->contains('id', $this->id);
+            return $chatRoom->participants->contains('id', $this->id) &&
+                   $this->canMessage($chatRoom->getOtherParticipant($this));
         }
 
         return false;
     }
 
-    // Relationship for projects managed by this user (for admins)
+    // ==================== CLIENT METHODS ====================
 
+    public function belongsToClient()
+    {
+        return !is_null($this->client_id);
+    }
+
+    public function getClientNameAttribute()
+    {
+        return $this->client ? $this->client->name : null;
+    }
+
+    // Get projects accessible to this user
+    public function getAccessibleProjects()
+    {
+        if ($this->isSuperAdmin() || $this->isAdmin()) {
+            return Project::all();
+        }
+
+        if ($this->isManager()) {
+            return $this->managedProjects()->get();
+        }
+
+        if ($this->isTeamMember()) {
+            return $this->teamProjects()->get();
+        }
+
+        if ($this->isClient()) {
+            return Project::where('client_id', $this->client_id)->get();
+        }
+
+        return collect();
+    }
+
+    // Get users this user can message
+    public function getMessageableUsers()
+    {
+        $users = User::where('id', '!=', $this->id)->get();
+
+        return $users->filter(function($user) {
+            return $this->canMessage($user);
+        });
+    }
+
+    // ==================== SCOPES ====================
+
+    public function scopeClients($query)
+    {
+        return $query->where('role', 'client');
+    }
+
+    public function scopeTeamMembers($query)
+    {
+        return $query->where('role', 'user');
+    }
+
+    public function scopeManagers($query)
+    {
+        return $query->where('role', 'manager');
+    }
+
+    public function scopeAdmins($query)
+    {
+        return $query->where('role', 'admin');
+    }
+
+    public function scopeSuperAdmins($query)
+    {
+        return $query->where('role', 'super_admin');
+    }
+
+    // ==================== ADDITIONAL HELPER METHODS ====================
+
+    public function getRoleDisplayName()
+    {
+        return match($this->role) {
+            'super_admin' => 'Super Admin',
+            'admin' => 'Admin',
+            'manager' => 'Manager',
+            'user' => 'Team Member',
+            'client' => 'Client',
+            default => ucfirst($this->role)
+        };
+    }
+
+    public function getInitialsAttribute()
+    {
+        return strtoupper(substr($this->name, 0, 1));
+    }
+
+    public function isActive()
+    {
+        return $this->email_verified_at !== null;
+    }
 }

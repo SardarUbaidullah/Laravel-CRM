@@ -1,179 +1,329 @@
 @extends("Manager.layouts.app")
 
 @section("content")
-<div class="max-w-4xl mx-auto px-4 py-8">
-    <!-- Header -->
-
-
-    @if($errors->any())
-        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-            <div class="flex items-center mb-2">
-                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                </svg>
-                <span class="font-medium">Please fix the following errors:</span>
-            </div>
-            <ul class="list-disc list-inside text-sm">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-6xl mx-auto px-4">
+        <!-- Header - Basecamp Style -->
+        <div class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Create New Task</h1>
+            <p class="text-gray-600 text-lg">Add a task to your project workflow</p>
         </div>
-    @endif
 
-    <!-- Create Form -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <form action="{{ route('manager.tasks.store') }}" method="POST">
-            @csrf
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <!-- Task Title -->
-                <div class="md:col-span-2">
-                    <label for="title" class="block text-sm font-medium text-gray-700 mb-2">Task Title *</label>
-                    <input type="text"
-                           name="title"
-                           id="title"
-                           value="{{ old('title') }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                           placeholder="Enter task title"
-                           required>
+        @if($errors->any())
+            <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6 rounded-lg">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                    <span class="font-medium text-red-800">Please fix the following errors:</span>
                 </div>
+                <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-                <!-- Project Selection -->
-                <div>
-                    <label for="project_id" class="block text-sm font-medium text-gray-700 mb-2">Project *</label>
-                    <select name="project_id"
-                            id="project_id"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                            required>
-                        <option value="">Select Project</option>
-                        @foreach($projects as $project)
-                            <option value="{{ $project->id }}"
-                                    {{ (old('project_id') == $project->id || $selectedProject == $project->id) ? 'selected' : '' }}>
-                                {{ $project->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+        <!-- Kanban Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Form -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <form action="{{ route('manager.tasks.store') }}" method="POST" id="taskForm">
+                        @csrf
 
-                <!-- Assign To -->
-                <div>
-                    <label for="assigned_to" class="block text-sm font-medium text-gray-700 mb-2">Assign To</label>
-                    <select name="assigned_to"
-                            id="assigned_to"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
-                        <option value="">Unassigned</option>
-                        @foreach($users as $user)
-                            <option value="{{ $user->id }}"
-                                    {{ (old('assigned_to') == $user->id || request('assigned_to') == $user->id) ? 'selected' : '' }}>
-                                {{ $user->name }} ({{ $user->email }})
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+                        <!-- Task Title -->
+                        <div class="mb-6">
+                            <label for="title" class="block text-sm font-semibold text-gray-900 mb-3">What needs to be done?</label>
+                            <input type="text"
+                                   name="title"
+                                   id="title"
+                                   value="{{ old('title') }}"
+                                   class="w-full px-4 py-3 text-lg border-0 border-b-2 border-gray-200 focus:border-green-500 focus:ring-0 transition-colors duration-200 bg-gray-50 rounded-t-lg"
+                                   placeholder="Write a clear task title..."
+                                   required
+                                   autofocus>
+                        </div>
 
-                <!-- Priority -->
-                <div>
-                    <label for="priority" class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
-                    <select name="priority"
-                            id="priority"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
-                        <option value="low" {{ old('priority') == 'low' ? 'selected' : '' }}>Low</option>
-                        <option value="medium" {{ old('priority', 'medium') == 'medium' ? 'selected' : '' }}>Medium</option>
-                        <option value="high" {{ old('priority') == 'high' ? 'selected' : '' }}>High</option>
-                    </select>
-                </div>
+                        <!-- Project & Assignment -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <!-- Project Selection -->
+                            <div>
+                                <label for="project_id" class="block text-sm font-medium text-gray-700 mb-2">Project</label>
+                                <div class="relative">
+                                    <select name="project_id"
+                                            id="project_id"
+                                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200 appearance-none"
+                                            required>
+                                        <option value="">Choose a project...</option>
+                                        @foreach($projects as $project)
+                                            <option value="{{ $project->id }}"
+                                                    {{ (old('project_id') == $project->id || $selectedProject == $project->id) ? 'selected' : '' }}
+                                                    class="flex items-center">
+                                                {{ $project->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
 
-                <!-- Status -->
-                <div>
-                    <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <select name="status"
-                            id="status"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
-                        <option value="todo" {{ old('status', 'todo') == 'todo' ? 'selected' : '' }}>To Do</option>
-                        <option value="in_progress" {{ old('status') == 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                        <option value="done" {{ old('status') == 'done' ? 'selected' : '' }}>Done</option>
-                    </select>
-                </div>
+                            <!-- Assign To -->
+                            <div>
+                                <label for="assigned_to" class="block text-sm font-medium text-gray-700 mb-2">Assign to</label>
+                                <div class="relative">
+                                    <select name="assigned_to"
+                                            id="assigned_to"
+                                            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200 appearance-none">
+                                        <option value="">Unassigned</option>
+                                        @foreach($users as $user)
+                                            <option value="{{ $user->id }}"
+                                                    {{ (old('assigned_to') == $user->id || request('assigned_to') == $user->id) ? 'selected' : '' }}>
+                                                {{ $user->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                <!-- Due Date -->
-                <div class="md:col-span-2">
-                    <label for="due_date" class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
-                    <input type="date"
-                           name="due_date"
-                           id="due_date"
-                           value="{{ old('due_date') }}"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                           min="{{ date('Y-m-d') }}">
-                    <p class="text-xs text-gray-500 mt-1">Leave empty if no due date</p>
+                        <!-- Task Details Grid -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                            <!-- Priority -->
+                            <div>
+                                <label for="priority" class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                                <select name="priority"
+                                        id="priority"
+                                        class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200">
+                                    <option value="low" {{ old('priority') == 'low' ? 'selected' : '' }}>💤 Low</option>
+                                    <option value="medium" {{ old('priority', 'medium') == 'medium' ? 'selected' : '' }}>⚡ Medium</option>
+                                    <option value="high" {{ old('priority') == 'high' ? 'selected' : '' }}>🔥 High</option>
+                                </select>
+                            </div>
+
+                            <!-- Status -->
+                            <div>
+                                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                                <select name="status"
+                                        id="status"
+                                        class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200">
+                                    <option value="todo" {{ old('status', 'todo') == 'todo' ? 'selected' : '' }}>📝 To Do</option>
+                                    <option value="in_progress" {{ old('status') == 'in_progress' ? 'selected' : '' }}>🔄 In Progress</option>
+                                    <option value="done" {{ old('status') == 'done' ? 'selected' : '' }}>✅ Done</option>
+                                </select>
+                            </div>
+
+                            <!-- Due Date -->
+                            <div>
+                                <label for="due_date" class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+                                <input type="date"
+                                       name="due_date"
+                                       id="due_date"
+                                       value="{{ old('due_date') }}"
+                                       class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200"
+                                       min="{{ date('Y-m-d') }}">
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-6">
+                            <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea name="description"
+                                      id="description"
+                                      rows="5"
+                                      class="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200 resize-none"
+                                      placeholder="Add details, instructions, or context for this task...">{{ old('description') }}</textarea>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                            <a href="{{ route('manager.tasks.index') }}"
+                               class="px-6 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition duration-200 font-medium flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                                </svg>
+                                Back to Tasks
+                            </a>
+                            <div class="flex items-center space-x-3">
+                                <button type="button"
+                                        onclick="if(confirm('Clear all fields?')) { document.getElementById('taskForm').reset(); }"
+                                        class="px-6 py-3 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition duration-200 font-medium">
+                                    Reset
+                                </button>
+                                <button type="submit"
+                                        class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200 font-medium shadow-sm flex items-center group">
+                                    <svg class="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                    </svg>
+                                    Create Task
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
 
-            <!-- Description -->
-            <div class="mb-6">
-                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea name="description"
-                          id="description"
-                          rows="4"
-                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                          placeholder="Enter task description">{{ old('description') }}</textarea>
-            </div>
-
-            <!-- Form Actions -->
-            <div class="flex items-center justify-between pt-6 border-t border-gray-200">
-                <a href="{{ route('manager.tasks.index') }}"
-                   class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-200 font-medium">
-                    Cancel
-                </a>
-                <div class="flex items-center space-x-3">
-                    <button type="button"
-                            onclick="if(confirm('Are you sure you want to reset the form?')) { this.form.reset(); }"
-                            class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-200 font-medium">
-                        Reset
-                    </button>
-                    <button type="submit"
-                            class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200 font-medium shadow-sm flex items-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+            <!-- Right Column - Preview & Tips -->
+            <div class="space-y-6">
+                <!-- Task Preview -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
-                        Create Task
-                    </button>
+                        Task Preview
+                    </h3>
+                    <div class="space-y-3 text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <span class="font-medium">Status:</span>
+                            <span id="preview-status" class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">To Do</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="font-medium">Priority:</span>
+                            <span id="preview-priority" class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">Medium</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="font-medium">Due Date:</span>
+                            <span id="preview-due" class="text-gray-600">Not set</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="font-medium">Assigned:</span>
+                            <span id="preview-assigned" class="text-gray-600">Unassigned</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Tips -->
+                <div class="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-3 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Best Practices
+                    </h3>
+                    <ul class="space-y-3 text-sm text-blue-800">
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-400 rounded-full mt-1.5 mr-3 flex-shrink-0"></span>
+                            <span>Be specific and clear in your task description</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-400 rounded-full mt-1.5 mr-3 flex-shrink-0"></span>
+                            <span>Set realistic due dates to keep projects on track</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-400 rounded-full mt-1.5 mr-3 flex-shrink-0"></span>
+                            <span>Use priorities to help team members focus</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="w-2 h-2 bg-blue-400 rounded-full mt-1.5 mr-3 flex-shrink-0"></span>
+                            <span>Assign tasks to the right people for better accountability</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Status Guide -->
+                <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Status Guide</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex items-center justify-between p-3 bg-white rounded-lg border">
+                            <span class="font-medium">📝 To Do</span>
+                            <span class="text-gray-500">Not started yet</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-white rounded-lg border">
+                            <span class="font-medium">🔄 In Progress</span>
+                            <span class="text-gray-500">Currently working on</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-white rounded-lg border">
+                            <span class="font-medium">✅ Done</span>
+                            <span class="text-gray-500">Completed task</span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </form>
-    </div>
-
-    <!-- Quick Tips -->
-    <div class="bg-blue-50 rounded-xl p-6 mt-8 border border-blue-200">
-        <h3 class="text-lg font-semibold text-blue-900 mb-3">Quick Tips</h3>
-        <ul class="text-sm text-blue-800 space-y-2">
-            <li class="flex items-start">
-                <svg class="w-5 h-5 mr-2 mt-0.5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <span>Assign tasks to team members to track their workload and progress</span>
-            </li>
-            <li class="flex items-start">
-                <svg class="w-5 h-5 mr-2 mt-0.5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <span>Set appropriate priorities to help team members focus on important tasks first</span>
-            </li>
-            <li class="flex items-start">
-                <svg class="w-5 h-5 mr-2 mt-0.5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <span>Use due dates to ensure timely completion of tasks and project milestones</span>
-            </li>
-        </ul>
+        </div>
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const projectSelect = document.getElementById('project_id');
-    const assignedToSelect = document.getElementById('assigned_to');
+    // Live preview updates
+    const statusSelect = document.getElementById('status');
+    const prioritySelect = document.getElementById('priority');
     const dueDateInput = document.getElementById('due_date');
+    const assignedSelect = document.getElementById('assigned_to');
+
+    // Status preview
+    statusSelect.addEventListener('change', function() {
+        const statusText = this.options[this.selectedIndex].text;
+        const previewStatus = document.getElementById('preview-status');
+        previewStatus.textContent = statusText.replace(/[📝🔄✅]/g, '').trim();
+
+        // Update status color
+        previewStatus.className = 'px-2 py-1 rounded-full text-xs ';
+        switch(this.value) {
+            case 'todo':
+                previewStatus.classList.add('bg-blue-100', 'text-blue-800');
+                break;
+            case 'in_progress':
+                previewStatus.classList.add('bg-yellow-100', 'text-yellow-800');
+                break;
+            case 'done':
+                previewStatus.classList.add('bg-green-100', 'text-green-800');
+                break;
+        }
+    });
+
+    // Priority preview
+    prioritySelect.addEventListener('change', function() {
+        const priorityText = this.options[this.selectedIndex].text;
+        const previewPriority = document.getElementById('preview-priority');
+        previewPriority.textContent = priorityText.replace(/[💤⚡🔥]/g, '').trim();
+
+        // Update priority color
+        previewPriority.className = 'px-2 py-1 rounded-full text-xs ';
+        switch(this.value) {
+            case 'low':
+                previewPriority.classList.add('bg-gray-100', 'text-gray-800');
+                break;
+            case 'medium':
+                previewPriority.classList.add('bg-yellow-100', 'text-yellow-800');
+                break;
+            case 'high':
+                previewPriority.classList.add('bg-red-100', 'text-red-800');
+                break;
+        }
+    });
+
+    // Due date preview
+    dueDateInput.addEventListener('change', function() {
+        const previewDue = document.getElementById('preview-due');
+        if (this.value) {
+            const date = new Date(this.value);
+            previewDue.textContent = date.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric'
+            });
+        } else {
+            previewDue.textContent = 'Not set';
+        }
+    });
+
+    // Assigned preview
+    assignedSelect.addEventListener('change', function() {
+        const previewAssigned = document.getElementById('preview-assigned');
+        previewAssigned.textContent = this.value ? this.options[this.selectedIndex].text : 'Unassigned';
+    });
 
     // Set minimum due date to today
     if (dueDateInput) {
@@ -188,16 +338,50 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Show loading state when form is submitted
-    const form = document.querySelector('form');
+    const form = document.getElementById('taskForm');
     if (form) {
         form.addEventListener('submit', function() {
             const submitButton = this.querySelector('button[type="submit"]');
             if (submitButton) {
                 submitButton.disabled = true;
-                submitButton.innerHTML = '<svg class="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v4m0 12v4m8-10h-4M6 12H2m15.364-7.364l-2.828 2.828M7.464 17.536l-2.828 2.828m0-12.728l2.828 2.828m9.9 9.9l2.828 2.828"></path></svg> Creating Task...';
+                submitButton.innerHTML = '<svg class="w-5 h-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2v4m0 12v4m8-10h-4M6 12H2m15.364-7.364l-2.828 2.828M7.464 17.536l-2.828 2.828m0-12.728l2.828 2.828m9.9 9.9l2.828 2.828"></path></svg> Creating...';
             }
         });
     }
+
+    // Initialize previews
+    statusSelect.dispatchEvent(new Event('change'));
+    prioritySelect.dispatchEvent(new Event('change'));
+    assignedSelect.dispatchEvent(new Event('change'));
 });
 </script>
+
+<style>
+/* Custom select styling */
+select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+/* Remove default arrow in IE */
+select::-ms-expand {
+    display: none;
+}
+
+/* Smooth transitions */
+input, select, textarea {
+    transition: all 0.2s ease-in-out;
+}
+
+/* Focus states */
+input:focus, select:focus, textarea:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+</style>
 @endsection

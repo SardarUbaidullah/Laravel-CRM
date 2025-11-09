@@ -2,6 +2,7 @@
 use App\Http\Middleware\SuperAdminMiddleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\UserMiddleware;
+use App\Http\Middleware\ClientAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'super_admin' => SuperAdminMiddleware::class,
             'admin' => AdminMiddleware::class,
             'user' => UserMiddleware::class,
+            'client.access' => ClientAccess::class,
         ]);
 
     })

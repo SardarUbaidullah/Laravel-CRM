@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
@@ -202,30 +203,7 @@
                 <!-- Left side - Search and Project Selector -->
                 <div class="flex items-center space-x-6">
                     <!-- Project Selector -->
-                    <div class="relative">
-                        <select class="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
-                            <option value="Mobile App">Mobile App</option>
-                            <option value="Website Redesign">Website Redesign</option>
-                            <option value="Design System">Design System</option>
-                            <option value="Wireframes">Wireframes</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                            <i class="fas fa-chevron-down text-xs"></i>
-                        </div>
-                    </div>
 
-                    <!-- Search Bar -->
-                    <div class="relative">
-                        <input
-                            type="text"
-                            id="headerSearch"
-                            placeholder="Search..."
-                            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-64"
-                        />
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-search text-gray-400"></i>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Right side - Icons and Profile -->
@@ -307,7 +285,7 @@
         </a>
 
         <!-- Settings Link -->
-        
+
 
         <!-- Divider -->
         <div class="border-t border-gray-100 my-1"></div>

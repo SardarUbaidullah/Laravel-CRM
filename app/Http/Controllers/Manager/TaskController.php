@@ -144,7 +144,7 @@ class TaskController extends Controller
         return view('manager.tasks.show', compact('task'));
     }
 
-    public function edit($id)
+     public function edit($id)
     {
         $task = Tasks::whereHas('project', function($query) {
             $query->where('manager_id', auth()->id());
@@ -156,28 +156,42 @@ class TaskController extends Controller
         return view('manager.tasks.edit', compact('task', 'projects', 'users'));
     }
 
-    public function update(Request $request, $id)
-    {
-        $task = Tasks::whereHas('project', function($query) {
-            $query->where('manager_id', auth()->id());
-        })->findOrFail($id);
+   public function update(Request $request, $id)
+{
+    $task = Tasks::whereHas('project', function($query) {
+        $query->where('manager_id', auth()->id());
+    })->findOrFail($id);
 
-        $request->validate([
-            'project_id' => ['sometimes', Rule::exists('projects', 'id')->where('manager_id', auth()->id())],
-            'assigned_to' => ['sometimes', 'nullable', 'exists:users,id'],
-            'title' => ['sometimes', 'required', 'string', 'max:255'],
-            'description' => ['sometimes', 'nullable', 'string'],
-            'priority' => ['sometimes', 'nullable', Rule::in(['low', 'medium', 'high'])],
-            'status' => ['sometimes', 'nullable', Rule::in(['todo', 'in_progress', 'done'])],
-            'due_date' => ['sometimes', 'nullable', 'date'],
-        ]);
+    $request->validate([
+        'project_id' => ['sometimes', Rule::exists('projects', 'id')->where('manager_id', auth()->id())],
+        'assigned_to' => ['sometimes', 'nullable', 'exists:users,id'],
+        'title' => ['sometimes', 'required', 'string', 'max:255'],
+        'description' => ['sometimes', 'nullable', 'string'],
+        'priority' => ['sometimes', 'nullable', Rule::in(['low', 'medium', 'high'])],
+        'status' => ['sometimes', 'nullable', Rule::in(['todo', 'in_progress', 'done'])],
+        'due_date' => ['sometimes', 'nullable', 'date'],
+    ]);
 
-        $task->update($request->all());
+    // Update task with explicit field assignment
+    $task->title = $request->title;
+    $task->project_id = $request->project_id;
+    $task->assigned_to = $request->assigned_to;
+    $task->description = $request->description;
+    $task->priority = $request->priority;
+    $task->status = $request->status;
 
-        return redirect()->route('manager.tasks.show', $task->id)
-                        ->with('success', 'Task updated successfully!');
+    // Handle due_date - ensure proper format
+    if ($request->filled('due_date')) {
+        $task->due_date = \Carbon\Carbon::parse($request->due_date);
+    } else {
+        $task->due_date = null;
     }
 
+    $task->save();
+
+    return redirect()->route('manager.tasks.show', $task->id)
+                    ->with('success', 'Task updated successfully!');
+}
     public function destroy($id)
     {
         $task = Tasks::whereHas('project', function($query) {
