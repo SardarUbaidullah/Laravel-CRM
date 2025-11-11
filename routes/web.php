@@ -136,6 +136,9 @@ Route::get('/calendar/events', [App\Http\Controllers\Manager\CalendarController:
     // Admin - Users
     Route::resource('users', UserController::class);
 
+    // File access management routes
+Route::get('/files/{id}/access', [FileController::class, 'manageAccess'])->name('files.manage-access');
+Route::post('/files/{id}/access', [FileController::class, 'updateAccess'])->name('files.update-access');
 
 });
 
@@ -156,7 +159,7 @@ Route::middleware(['auth', 'super_admin'])->group(function () {
     Route::resource('subtasks', SubTaskController::class);
 
     // Milestones
-    Route::resource('milestones', MilestoneController::class);
+    // Route::resource('milestones', MilestoneController::class);
 
     // Time Logs
     Route::resource('time-logs', TimeLogController::class);
@@ -168,6 +171,7 @@ Route::middleware(['auth', 'super_admin'])->group(function () {
 
 
 });
+
 
 // Reports Routes for Super Admin
    // routes/web.php
@@ -193,7 +197,10 @@ Route::get('/admin/reports/test', function() {
 |--------------------------------------------------------------------------
 */
 
-
+// routes/web.php
+// In your manager routes group
+Route::get('/tasks/projects/{project}/milestones', [TaskController::class, 'getMilestones'])
+    ->name('manager.tasks.milestones');
 
 Route::prefix('manager')
     ->name('manager.')
@@ -201,7 +208,15 @@ Route::prefix('manager')
     ->group(function () {
 
         // Dashboard
+//milestone
+Route::resource('milestones', MilestoneController::class);
 
+
+Route::get('/tasks/projects/{project}/milestones', [ManagerTaskController::class, 'getMilestones'])
+    ->name('manager.tasks.milestones');
+    // In your manager routes group
+Route::put('/tasks/{task}/status', [TaskController::class, 'updateStatus'])
+    ->name('manager.tasks.update-status');
         // Projects
         // Manager Project Routes
         Route::patch('/projects/{project}/status', [ManagerProjectController::class, 'updateStatus'])

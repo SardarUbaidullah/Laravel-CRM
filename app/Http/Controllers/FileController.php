@@ -14,87 +14,111 @@ use Illuminate\Support\Str;
 class FileController extends Controller
 {
     // GET /files
-    public function index(Request $request)
-    {
-        $user = auth()->user();
+   public function index(Request $request)
+{
+    $user = auth()->user();
 
-        // Base query for files
-        $query = Files::with(['project','task','user','versions'])
-            ->withCount(['versions as child_versions_count'])
-            ->latestVersions()
-            ->latest();
+    // Base query for files
+    $query = Files::with(['project','task','user','versions'])
+        ->withCount(['versions as child_versions_count'])
+        ->latestVersions()
+        ->latest();
 
-        // Role-based file access control
-        if ($user->role === 'user') {
-            // Team Member: Can see files from projects where they have tasks
-            $query->whereHas('project.tasks', function($q) use ($user) {
-                $q->where('assigned_to', $user->id);
+    // Role-based file access control
+    if ($user->role === 'user') {
+        // Team Member: Can see files from projects where they have tasks + accessible general files
+        $query->where(function($q) use ($user) {
+            // Project files where user has tasks
+            $q->whereHas('project.tasks', function($taskQuery) use ($user) {
+                $taskQuery->where('assigned_to', $user->id);
+            })->orWhere(function($q) use ($user) {
+                // General files that are accessible to this user
+                $q->whereNull('project_id')
+                  ->where(function($generalQuery) use ($user) {
+                      $generalQuery->where('is_public', true)
+                                  ->orWhere('user_id', $user->id) // Uploader
+                                  ->orWhereJsonContains('accessible_users', $user->id); // Explicit access
+                  });
             });
-        } elseif ($user->role === 'admin') {
-            // Manager: Can see files from projects they manage
-            $query->whereHas('project', function($q) use ($user) {
-                $q->where('manager_id', $user->id);
+        });
+    } elseif ($user->role === 'admin') {
+        // Manager: Can see files from projects they manage + accessible general files
+        $query->where(function($q) use ($user) {
+            // Project files from managed projects
+            $q->whereHas('project', function($projectQuery) use ($user) {
+                $projectQuery->where('manager_id', $user->id);
+            })->orWhere(function($q) use ($user) {
+                // General files that are accessible to this user
+                $q->whereNull('project_id')
+                  ->where(function($generalQuery) use ($user) {
+                      $generalQuery->where('is_public', true)
+                                  ->orWhere('user_id', $user->id) // Uploader
+                                  ->orWhereJsonContains('accessible_users', $user->id); // Explicit access
+                  });
             });
-        }
-        // Super Admin can see all files (no additional conditions)
-
-        // Apply filters if any (for super admin and managers)
-        if ($user->role !== 'user' && $request->filled('project_id')) {
-            $query->where('project_id', $request->project_id);
-        }
-
-        if ($user->role !== 'user' && $request->filled('task_id')) {
-            $query->where('task_id', $request->task_id);
-        }
-
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
-        }
-
-        if ($user->role !== 'user' && $request->filled('type')) {
-            if ($request->type === 'project') {
-                $query->whereNotNull('project_id');
-            } elseif ($request->type === 'general') {
-                $query->whereNull('project_id');
-            }
-        }
-
-        $files = $query->get();
-
-        // Calculate stats based on accessible files
-        $totalFiles = $files->count();
-        $projectFiles = $files->whereNotNull('project_id')->count();
-        $generalFiles = $files->whereNull('project_id')->count();
-        $totalVersions = Files::whereIn('id', $files->pluck('id'))->count();
-
-        // Get projects and tasks based on user role
-        if ($user->role === 'super_admin') {
-            $projects = Projects::all();
-            $tasks = Tasks::all();
-        } elseif ($user->role === 'admin') {
-            $projects = Projects::where('manager_id', $user->id)->get();
-            $tasks = Tasks::whereIn('project_id', $projects->pluck('id'))->get();
-        } else {
-            // Team member: get projects where they have tasks and tasks assigned to them
-            $projects = Projects::whereHas('tasks', function($q) use ($user) {
-                $q->where('assigned_to', $user->id);
-            })->get();
-            $tasks = Tasks::where('assigned_to', $user->id)->get();
-        }
-
-        $users = User::all();
-
-        return view('admin.files.index', compact(
-            'files',
-            'projects',
-            'tasks',
-            'users',
-            'totalFiles',
-            'projectFiles',
-            'generalFiles',
-            'totalVersions'
-        ));
+        });
     }
+    // Super Admin can see all files (no additional conditions)
+
+    // Apply filters if any (for super admin and managers)
+    if ($user->role !== 'user' && $request->filled('project_id')) {
+        $query->where('project_id', $request->project_id);
+    }
+
+    if ($user->role !== 'user' && $request->filled('task_id')) {
+        $query->where('task_id', $request->task_id);
+    }
+
+    if ($request->filled('user_id')) {
+        $query->where('user_id', $request->user_id);
+    }
+
+    if ($user->role !== 'user' && $request->filled('type')) {
+        if ($request->type === 'project') {
+            $query->whereNotNull('project_id');
+        } elseif ($request->type === 'general') {
+            $query->whereNull('project_id');
+        }
+    }
+
+    $files = $query->get();
+
+    // Calculate stats based on accessible files
+    $totalFiles = $files->count();
+    $projectFiles = $files->whereNotNull('project_id')->count();
+    $generalFiles = $files->whereNull('project_id')->count();
+
+    // Calculate total versions across accessible files
+    $accessibleFileIds = $files->pluck('id');
+    $totalVersions = Files::whereIn('id', $accessibleFileIds)
+        ->orWhereIn('parent_id', $accessibleFileIds)
+        ->count();
+
+    // Get projects and tasks based on user role
+    if ($user->role === 'super_admin') {
+        $projects = Projects::all();
+        $tasks = Tasks::all();
+    } elseif ($user->role === 'admin') {
+        $projects = Projects::where('manager_id', $user->id)->get();
+        $tasks = Tasks::whereIn('project_id', $projects->pluck('id'))->get();
+    } else {
+        // Team member: get projects where they have tasks and tasks assigned to them
+        $projects = Projects::whereHas('tasks', function($q) use ($user) {
+            $q->where('assigned_to', $user->id);
+        })->get();
+        $tasks = Tasks::where('assigned_to', $user->id)->get();
+    }
+
+    return view('admin.files.index', compact(
+        'files',
+        'projects',
+        'tasks',
+        'totalFiles',
+        'projectFiles',
+        'generalFiles',
+        'totalVersions'
+    ));
+}
 
     // GET /files/create
     public function create()
@@ -184,17 +208,31 @@ class FileController extends Controller
     }
 
     // GET /files/{id}
-    public function show($id)
-    {
-        $file = Files::with(['project','task','user','versions.user'])->findOrFail($id);
+    // In FileController show method, add temporary debugging
+public function show($id)
+{
+    $file = Files::with(['project','task','user','versions.user'])->findOrFail($id);
 
-        // Check access
-        if (!$this->canAccessFile($file)) {
-            return redirect()->route('files.index')->with('error', 'You do not have permission to access this file.');
-        }
+    $userId = auth()->id();
+    \Log::info('Show page access check:', [
+        'file_id' => $file->id,
+        'file_name' => $file->file_name,
+        'user_id' => $userId,
+        'user_role' => auth()->user()->role,
+        'file_project_id' => $file->project_id,
+        'file_is_public' => $file->is_public,
+        'file_accessible_users' => $file->accessible_users,
+        'file_user_id' => $file->user_id,
+        'canAccess_result' => $file->canUserAccess($userId)
+    ]);
 
-        return view('admin.files.show', compact('file'));
+    // Check access using the new method
+    if (!$file->canUserAccess(auth()->id())) {
+        return redirect()->route('files.index')->with('error', 'You do not have permission to access this file.');
     }
+
+    return view('admin.files.show', compact('file'));
+}
 
     // GET /files/{id}/edit
     public function edit($id)
@@ -280,22 +318,22 @@ class FileController extends Controller
     }
 
     // Download file
-    public function download($id)
-    {
-        $file = Files::findOrFail($id);
+    // public function download($id)
+    // {
+    //     $file = Files::findOrFail($id);
 
-        if (!Storage::disk('public')->exists($file->file_path)) {
-            return redirect()->route('files.index')->with('error', 'File not found on server.');
-        }
+    //     if (!Storage::disk('public')->exists($file->file_path)) {
+    //         return redirect()->route('files.index')->with('error', 'File not found on server.');
+    //     }
 
-        // Get the correct file path and set proper headers
-        $filePath = Storage::disk('public')->path($file->file_path);
+    //     // Get the correct file path and set proper headers
+    //     $filePath = Storage::disk('public')->path($file->file_path);
 
-        return response()->download($filePath, $file->file_name, [
-            'Content-Type' => $file->mime_type,
-            'Content-Disposition' => 'attachment; filename="' . $file->file_name . '"',
-        ]);
-    }
+    //     return response()->download($filePath, $file->file_name, [
+    //         'Content-Type' => $file->mime_type,
+    //         'Content-Disposition' => 'attachment; filename="' . $file->file_name . '"',
+    //     ]);
+    // }
 
     // Preview file
     public function preview($id)
@@ -402,4 +440,84 @@ class FileController extends Controller
 
         return false;
     }
+
+
+
+    // Add to FileController
+
+// GET /files/{id}/access
+public function manageAccess($id)
+{
+    $file = Files::with(['user'])->findOrFail($id);
+
+    // Only super admin can manage access for general files
+    if (auth()->user()->role !== 'super_admin') {
+        return redirect()->route('files.show', $file->id)->with('error', 'You do not have permission to manage file access.');
+    }
+
+    // Only allow access management for general files
+    if ($file->project_id) {
+        return redirect()->route('files.show', $file->id)->with('error', 'Access management is only available for general files.');
+    }
+
+    $allUsers = User::where('id', '!=', auth()->id())->get();
+    $accessibleUsers = $file->getAccessibleUsers();
+
+    return view('admin.files.manage-access', compact('file', 'allUsers', 'accessibleUsers'));
+}
+
+// POST /files/{id}/access
+public function updateAccess(Request $request, $id)
+{
+    $file = Files::findOrFail($id);
+
+    // Only super admin can manage access for general files
+    if (auth()->user()->role !== 'super_admin') {
+        return redirect()->route('files.show', $file->id)->with('error', 'You do not have permission to manage file access.');
+    }
+
+    // Only allow access management for general files
+    if ($file->project_id) {
+        return redirect()->route('files.show', $file->id)->with('error', 'Access management is only available for general files.');
+    }
+
+    $validated = $request->validate([
+        'user_ids' => ['nullable', 'array'],
+        'user_ids.*' => ['exists:users,id'],
+        'is_public' => ['boolean'],
+    ]);
+
+    // Update public access
+    $file->update([
+        'is_public' => $request->boolean('is_public'),
+        'accessible_users' => $request->user_ids ?? [] // Store selected user IDs
+    ]);
+
+    return redirect()->route('files.show', $file->id)->with('success', 'File access updated successfully!');
+}
+
+// Update the show method to check access
+
+
+// Update the download method to check access
+public function download($id)
+{
+    $file = Files::findOrFail($id);
+
+    // Check access using the new method
+    if (!$file->canUserAccess(auth()->id())) {
+        return redirect()->route('files.index')->with('error', 'You do not have permission to download this file.');
+    }
+
+    if (!Storage::disk('public')->exists($file->file_path)) {
+        return redirect()->route('files.index')->with('error', 'File not found on server.');
+    }
+
+    $filePath = Storage::disk('public')->path($file->file_path);
+
+    return response()->download($filePath, $file->file_name, [
+        'Content-Type' => $file->mime_type,
+        'Content-Disposition' => 'attachment; filename="' . $file->file_name . '"',
+    ]);
+}
 }

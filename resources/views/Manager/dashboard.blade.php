@@ -349,6 +349,14 @@
                 </div>
                 <div class="space-y-3 max-h-64 overflow-y-auto scrollbar-custom">
                     @forelse($recentTasks as $task)
+
+                      @php
+        $assignedUserName = 'System';
+        if ($task->assigned_to) {
+            $user = \App\Models\User::find($task->assigned_to);
+            $assignedUserName = $user ? $user->name : 'System';
+        }
+    @endphp
                     <div class="activity-item flex items-start space-x-3 p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
                         <div class="w-8 h-8 rounded-full flex items-center justify-center
                             @if($task->status == 'done') text-green-600 bg-green-100
@@ -359,9 +367,10 @@
                                 @elseif($task->status == 'in_progress') fa-tasks
                                 @else fa-clock @endif"></i>
                         </div>
+
                         <div class="flex-1 min-w-0">
                             <p class="text-sm text-black">
-                                <span class="font-semibold">{{ $task->user->name ?? 'System' }}</span>
+                                <span class="font-semibold">{{ $assignedUserName ?? 'system'}}</span>
                                 <span class="text-gray-600">
                                     @if($task->status == 'done')
                                     completed "{{ $task->title }}"

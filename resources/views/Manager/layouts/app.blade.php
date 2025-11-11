@@ -203,30 +203,7 @@
                 <!-- Left side - Search and Project Selector -->
                 <div class="flex items-center space-x-6">
                     <!-- Project Selector -->
-                    <div class="relative">
-                        <select class="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
-                            <option value="Mobile App">Mobile App</option>
-                            <option value="Website Redesign">Website Redesign</option>
-                            <option value="Design System">Design System</option>
-                            <option value="Wireframes">Wireframes</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                            <i class="fas fa-chevron-down text-xs"></i>
-                        </div>
-                    </div>
-
-                    <!-- Search Bar -->
-                    <div class="relative">
-                        <input
-                            type="text"
-                            id="headerSearch"
-                            placeholder="Search..."
-                            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-64"
-                        />
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-search text-gray-400"></i>
-                        </div>
-                    </div>
+                   
                 </div>
 
                 <!-- Right side - Icons and Profile -->
@@ -234,13 +211,11 @@
                     <!-- Icons -->
                     <div class="flex items-center space-x-2">
                         <button class="p-2 text-muted-foreground hover:bg-accent-hover hover:text-accent-foreground rounded-lg transition-colors duration-200">
-                            <i class="fas fa-calendar"></i>
+                          <a href="{{url('/calendar')}}">  <i class="fas fa-calendar"></i></a>
                         </button>
+
                         <button class="p-2 text-muted-foreground hover:bg-accent-hover hover:text-accent-foreground rounded-lg transition-colors duration-200">
-                            <i class="fas fa-bell"></i>
-                        </button>
-                        <button class="p-2 text-muted-foreground hover:bg-accent-hover hover:text-accent-foreground rounded-lg transition-colors duration-200">
-                            <i class="fas fa-comment"></i>
+                           <a href="{{url('/chat')}}"><i class="fas fa-comment"></i></a>
                         </button>
                     </div>
 
@@ -337,85 +312,7 @@
     </div>
 
     <!-- User Management Modal -->
-    <div id="userModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 fade-in">
-        <div class="bg-white rounded-2xl w-full max-w-md p-6 slide-in">
-            <h3 class="text-xl font-semibold text-black mb-4" id="modalTitle">Create New User</h3>
 
-            <form id="userForm">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Full Name
-                        </label>
-                        <input
-                            type="text"
-                            id="userName"
-                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white"
-                            placeholder="Enter full name"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Email Address
-                        </label>
-                        <input
-                            type="email"
-                            id="userEmail"
-                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white"
-                            placeholder="Enter email address"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Role
-                        </label>
-                        <select
-                            id="userRole"
-                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white"
-                        >
-                            <option value="Developer">Developer</option>
-                            <option value="Designer">Designer</option>
-                            <option value="Project Manager">Project Manager</option>
-                            <option value="Admin">Admin</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Status
-                        </label>
-                        <select
-                            id="userStatus"
-                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white"
-                        >
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button
-                        type="button"
-                        id="cancelUserBtn"
-                        class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-[#146c3e] font-medium transition-colors"
-                    >
-                        Create User
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <script>
         // Sample data

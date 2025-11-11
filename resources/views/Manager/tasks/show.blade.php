@@ -71,6 +71,15 @@
                             @endif
                         </span>
                         @endif
+
+                        @if($task->milestone)
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            {{ $task->milestone->title }}
+                        </span>
+                        @endif
                     </div>
                 </div>
 
@@ -136,6 +145,16 @@
                                             <span class="text-sm font-medium text-gray-600">Created By</span>
                                             <span class="text-sm font-semibold text-gray-900">{{ $task->user->name ?? 'System' }}</span>
                                         </div>
+                                        @if($task->milestone)
+                                        <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                            <span class="text-sm font-medium text-gray-600">Milestone</span>
+                                            <div class="flex items-center">
+                                                <span class="text-sm font-semibold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg">
+                                                    {{ $task->milestone->title }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -195,75 +214,137 @@
                     </div>
                 </div>
 
-                <!-- Subtasks Section -->
-               <!-- Add this to the left column of the task show view -->
-<!-- Subtasks Section -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-semibold text-gray-900">Subtasks</h2>
-        <div class="flex items-center space-x-3">
-            <a href="{{ route('manager.subtasks.index', $task->id) }}"
-               class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                View All
-            </a>
-            <a href="{{ route('manager.subtasks.create', $task->id) }}"
-               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center text-sm">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                </svg>
-                Add Subtask
-            </a>
-        </div>
-    </div>
-
-    @if($task->subtasks && $task->subtasks->count() > 0)
-        <div class="space-y-3">
-            @foreach($task->subtasks->take(5) as $subtask)
-            <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-150">
-                <div class="flex items-center space-x-3">
-                    <div class="w-6 h-6 border-2 border-gray-300 rounded flex items-center justify-center">
-                        @if($subtask->status == 'done')
-                            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                            </svg>
+                <!-- Milestone Information Card -->
+                @if($task->milestone)
+                <div class="bg-white rounded-2xl shadow-sm border border-indigo-200/60 overflow-hidden transition-all duration-300 hover:shadow-md">
+                    <div class="bg-gradient-to-r from-indigo-50 to-purple-50 px-6 py-4 border-b border-indigo-200/60">
+                        <h2 class="text-xl font-semibold text-gray-900 flex items-center">
+                            <div class="w-2 h-2 bg-indigo-500 rounded-full mr-3"></div>
+                            Milestone Information
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                    <span class="text-sm font-medium text-gray-600">Milestone Title</span>
+                                    <span class="text-sm font-semibold text-indigo-600">{{ $task->milestone->title }}</span>
+                                </div>
+                                <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                    <span class="text-sm font-medium text-gray-600">Status</span>
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                        @if($task->milestone->status == 'completed') bg-green-100 text-green-800
+                                        @elseif($task->milestone->status == 'in_progress') bg-blue-100 text-blue-800
+                                        @else bg-gray-100 text-gray-800 @endif">
+                                        {{ ucfirst($task->milestone->status) }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                @if($task->milestone->due_date)
+                                <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                    <span class="text-sm font-medium text-gray-600">Due Date</span>
+                                    <span class="text-sm font-semibold text-gray-900">
+                                        {{ \Carbon\Carbon::parse($task->milestone->due_date)->format('M d, Y') }}
+                                    </span>
+                                </div>
+                                @endif
+                                <div class="flex justify-between items-center py-3 border-b border-gray-100">
+                                    <span class="text-sm font-medium text-gray-600">Progress</span>
+                                    <div class="flex items-center space-x-2">
+                                        @php
+                                            $milestoneTasks = $task->milestone->tasks ?? collect();
+                                            $completedTasks = $milestoneTasks->where('status', 'done')->count();
+                                            $totalTasks = $milestoneTasks->count();
+                                            $progress = $totalTasks > 0 ? ($completedTasks / $totalTasks) * 100 : 0;
+                                        @endphp
+                                        <div class="w-16 bg-gray-200 rounded-full h-2">
+                                            <div class="h-2 rounded-full bg-indigo-500" style="width: {{ $progress }}%"></div>
+                                        </div>
+                                        <span class="text-xs text-gray-600">{{ round($progress) }}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @if($task->milestone->description)
+                        <div class="mt-6 pt-6 border-t border-gray-100">
+                            <h3 class="text-sm font-semibold text-gray-700 mb-3">Milestone Description</h3>
+                            <div class="bg-indigo-50 rounded-xl p-4 border border-indigo-200">
+                                <p class="text-sm text-gray-700 leading-relaxed">{{ $task->milestone->description }}</p>
+                            </div>
+                        </div>
                         @endif
                     </div>
-                    <div>
-                        <p class="text-sm font-medium text-gray-900">{{ $subtask->title }}</p>
-                        <p class="text-xs text-gray-500 capitalize">{{ str_replace('_', ' ', $subtask->status) }}</p>
-                    </div>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <a href="{{ route('manager.subtasks.edit', ['taskId' => $task->id, 'subtaskId' => $subtask->id]) }}"
-                       class="text-yellow-600 hover:text-yellow-800 text-xs">
-                        Edit
-                    </a>
-                </div>
-            </div>
-            @endforeach
-        </div>
+                @endif
 
-        @if($task->subtasks->count() > 5)
-        <div class="mt-4 text-center">
-            <a href="{{ route('manager.subtasks.index', $task->id) }}"
-               class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                View all {{ $task->subtasks->count() }} subtasks
-            </a>
-        </div>
-        @endif
-    @else
-        <div class="text-center py-8">
-            <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
-            </svg>
-            <p class="text-gray-500">No subtasks created yet</p>
-            <a href="{{ route('manager.subtasks.create', $task->id) }}"
-               class="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2 inline-block">
-                Create your first subtask
-            </a>
-        </div>
-    @endif
-</div>
+                <!-- Subtasks Section -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold text-gray-900">Subtasks</h2>
+                        <div class="flex items-center space-x-3">
+                            <a href="{{ route('manager.subtasks.index', $task->id) }}"
+                               class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                View All
+                            </a>
+                            <a href="{{ route('manager.subtasks.create', $task->id) }}"
+                               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center text-sm">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                </svg>
+                                Add Subtask
+                            </a>
+                        </div>
+                    </div>
+
+                    @if($task->subtasks && $task->subtasks->count() > 0)
+                        <div class="space-y-3">
+                            @foreach($task->subtasks->take(5) as $subtask)
+                            <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-150">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-6 h-6 border-2 border-gray-300 rounded flex items-center justify-center">
+                                        @if($subtask->status == 'done')
+                                            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                            </svg>
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900">{{ $subtask->title }}</p>
+                                        <p class="text-xs text-gray-500 capitalize">{{ str_replace('_', ' ', $subtask->status) }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <a href="{{ route('manager.subtasks.edit', ['taskId' => $task->id, 'subtaskId' => $subtask->id]) }}"
+                                       class="text-yellow-600 hover:text-yellow-800 text-xs">
+                                        Edit
+                                    </a>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+
+                        @if($task->subtasks->count() > 5)
+                        <div class="mt-4 text-center">
+                            <a href="{{ route('manager.subtasks.index', $task->id) }}"
+                               class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                View all {{ $task->subtasks->count() }} subtasks
+                            </a>
+                        </div>
+                        @endif
+                    @else
+                        <div class="text-center py-8">
+                            <svg class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                            </svg>
+                            <p class="text-gray-500">No subtasks created yet</p>
+                            <a href="{{ route('manager.subtasks.create', $task->id) }}"
+                               class="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2 inline-block">
+                                Create your first subtask
+                            </a>
+                        </div>
+                    @endif
+                </div>
             </div>
 
             <!-- Right Column - Timeline & Actions -->
@@ -383,6 +464,21 @@
                                     <p class="text-sm text-gray-500">Go to project details</p>
                                 </div>
                             </a>
+
+                            @if($task->milestone)
+                            <a href="{{ route('manager.milestones.show', $task->milestone->id) }}"
+                               class="group w-full flex items-center space-x-4 p-4 text-left text-gray-700 hover:bg-indigo-50 rounded-xl border border-gray-200 hover:border-indigo-200 transition-all duration-200">
+                                <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200 transition-colors duration-200">
+                                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">View Milestone</p>
+                                    <p class="text-sm text-gray-500">See milestone details</p>
+                                </div>
+                            </a>
+                            @endif
 
                             @if($task->assignee)
                             <a href="{{ route('manager.team.show', $task->assigned_to) }}"

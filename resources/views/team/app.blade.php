@@ -98,6 +98,19 @@
                         <span>Projects</span>
                     </a>
 
+                     <a href="{{ url('/files') }}"
+   class="nav-item flex items-center space-x-4 px-4 py-4 rounded-2xl text-sm font-semibold transition-all duration-300
+   {{ request()->is('files*') ?
+   'bg-blue-500/10 text-blue-600 border border-blue-200 shadow-sm' :
+   'text-slate-600 hover:bg-white hover:shadow-md hover:border hover:border-slate-200' }}">
+    <div class="w-10 h-10 rounded-xl flex items-center justify-center
+        {{ request()->is('files*') ? 'bg-blue-500 text-white' : 'bg-slate-100 text-slate-600' }}">
+        <i class="fas fa-file-alt"></i>
+    </div>
+    <span>Files</span>
+</a>
+
+
                     <!-- Chat -->
                     <a href="{{ route('team.chat.index') }}"
                        class="nav-item flex items-center space-x-4 px-4 py-4 rounded-2xl text-sm font-semibold transition-all duration-300

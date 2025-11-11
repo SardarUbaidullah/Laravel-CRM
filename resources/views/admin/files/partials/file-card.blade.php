@@ -66,6 +66,34 @@
                     v{{ $latestVersion->version }}
                 </span>
             </div>
+
+            <!-- Access Status for General Files -->
+            @if(!$file->project_id)
+            <div class="mt-2">
+                @if($file->is_public)
+                <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-green-100 text-green-800">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Public
+                </span>
+                @elseif($file->accessible_users && count($file->accessible_users) > 0)
+                <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-blue-100 text-blue-800">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    Restricted ({{ count($file->accessible_users) }} users)
+                </span>
+                @else
+                <span class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-800">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    Private
+                </span>
+                @endif
+            </div>
+            @endif
         </div>
     </div>
 </div>
@@ -149,6 +177,17 @@
         </a>
     </div>
     <div class="flex space-x-1">
+        <!-- Manage Access Button (Only for General Files and Super Admin) -->
+        @if(auth()->user()->role === 'super_admin' && !$file->project_id)
+        <a href="{{ route('files.manage-access', $file->id) }}"
+           class="text-gray-400 hover:text-purple-600 p-1 rounded hover:bg-purple-50 transition-colors"
+           title="Manage Access">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+            </svg>
+        </a>
+        @endif
+
         <a href="{{ route('files.new-version-form', $file->id) }}"
            class="text-gray-400 hover:text-blue-600 p-1 rounded hover:bg-blue-50 transition-colors"
            title="Upload New Version">

@@ -329,7 +329,7 @@
                         </div>
                     </div>
                     <h3 class="text-sm font-medium text-black mb-1">Time Logs</h3>
-                   
+
                 </div>
 
                 <!-- Subtasks -->
@@ -443,7 +443,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm text-black">
-                            <span class="font-semibold">System</span>
+                            <span class="font-semibold">{{Auth::user()->name}}</span>
                             <span class="text-gray-600"> {{ $activity['message'] }}</span>
                         </p>
                         <p class="text-xs text-gray-500 mt-1">{{ $activity['time']->diffForHumans() }}</p>

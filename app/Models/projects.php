@@ -105,9 +105,9 @@ class Projects extends Model
         return $this->hasMany(Files::class, 'project_id'); // Explicitly specify foreign key
     }
 
-    public function milestones(): HasMany
+     public function milestones()
     {
-        return $this->hasMany(Milestones::class);
+        return $this->hasMany(Milestones::class, 'project_id'); // Explicitly specify foreign key
     }
 
     public function chatRooms(): HasMany
@@ -210,7 +210,7 @@ class Projects extends Model
         return false;
     }
 
-   
+
 
     public function addTeamMember(User $user, string $role = 'team_member'): void
     {

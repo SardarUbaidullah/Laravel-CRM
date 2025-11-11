@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
@@ -211,13 +213,11 @@
                     <!-- Icons -->
                     <div class="flex items-center space-x-2">
                         <button class="p-2 text-muted-foreground hover:bg-accent-hover hover:text-accent-foreground rounded-lg transition-colors duration-200">
-                            <i class="fas fa-calendar"></i>
+                           <a href="{{url("/calendar")}}"> <i class="fas fa-calendar"></i></a>
                         </button>
+
                         <button class="p-2 text-muted-foreground hover:bg-accent-hover hover:text-accent-foreground rounded-lg transition-colors duration-200">
-                            <i class="fas fa-bell"></i>
-                        </button>
-                        <button class="p-2 text-muted-foreground hover:bg-accent-hover hover:text-accent-foreground rounded-lg transition-colors duration-200">
-                            <i class="fas fa-comment"></i>
+                            <a href="{{url("/chat")}}"><i class="fas fa-comment"></i></a>
                         </button>
                     </div>
 

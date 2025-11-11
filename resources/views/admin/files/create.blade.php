@@ -8,6 +8,7 @@
 @endphp
 
 @extends($layout)
+@section('content')
 <div class="max-w-6xl mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-8">
         <div>

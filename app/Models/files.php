@@ -19,13 +19,137 @@ class Files extends Model
         'mime_type',
         'version',
         'parent_id',
-        'description'
+        'description',
+        'is_public',
+        'accessible_users'
     ];
 
     protected $casts = [
         'file_size' => 'integer',
+        'is_public' => 'boolean',
+        'accessible_users' => 'array',
     ];
 
+    // ... existing relationships remain the same ...
+
+    /**
+     * Check if a user can access this file
+     */
+   public function canUserAccess($userId)
+{
+    // If file has a project, use project-based access
+    if ($this->project_id) {
+        return $this->canAccessProjectFile($userId);
+    }
+
+    // For general files, check access control
+    return $this->canAccessGeneralFile($userId);
+}
+
+    private function canAccessProjectFile($userId)
+    {
+        $user = User::find($userId);
+
+        if ($user->role === 'super_admin') {
+            return true;
+        }
+
+        if ($user->role === 'admin') {
+            return $this->project && $this->project->manager_id === $userId;
+        }
+
+        if ($user->role === 'user') {
+            return Tasks::where('project_id', $this->project_id)
+                ->where('assigned_to', $userId)
+                ->exists();
+        }
+
+        return false;
+    }
+
+    private function canAccessGeneralFile($userId)
+{
+    $user = User::find($userId);
+
+    // Super admin always has access
+    if ($user->role === 'super_admin') {
+        return true;
+    }
+
+    // Uploader always has access
+    if ($this->user_id === $userId) {
+        return true;
+    }
+
+    // Check if file is public
+    if ($this->is_public) {
+        return true;
+    }
+
+    // Check explicit access from JSON array
+    $accessibleUsers = $this->accessible_users ?? [];
+
+    // Debug accessible users
+    \Log::info('Checking access for file:', [
+        'file_id' => $this->id,
+        'file_name' => $this->file_name,
+        'user_id' => $userId,
+        'accessible_users' => $accessibleUsers,
+        'is_user_in_array' => in_array($userId, $accessibleUsers)
+    ]);
+
+    return in_array($userId, $accessibleUsers);
+}
+
+    /**
+     * Get users who have explicit access to this file
+     */
+    public function getAccessibleUsers()
+    {
+        if (empty($this->accessible_users)) {
+            return collect();
+        }
+
+        return User::whereIn('id', $this->accessible_users)->get();
+    }
+
+    /**
+     * Add user to accessible users list
+     */
+    public function grantAccess($userId)
+    {
+        $accessibleUsers = $this->accessible_users ?? [];
+
+        if (!in_array($userId, $accessibleUsers)) {
+            $accessibleUsers[] = $userId;
+            $this->accessible_users = $accessibleUsers;
+            $this->save();
+        }
+    }
+
+    /**
+     * Remove user from accessible users list
+     */
+    public function revokeAccess($userId)
+    {
+        $accessibleUsers = $this->accessible_users ?? [];
+
+        $accessibleUsers = array_filter($accessibleUsers, function($id) use ($userId) {
+            return $id != $userId;
+        });
+
+        $this->accessible_users = array_values($accessibleUsers); // Reindex array
+        $this->save();
+    }
+
+    /**
+     * Check if specific user has explicit access
+     */
+    public function hasUserAccess($userId)
+    {
+        $accessibleUsers = $this->accessible_users ?? [];
+        return in_array($userId, $accessibleUsers);
+    }
     public function project()
     {
         return $this->belongsTo(Projects::class, 'project_id');

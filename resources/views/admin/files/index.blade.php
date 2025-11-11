@@ -8,6 +8,8 @@
 @endphp
 
 @extends($layout)
+@section('content')
+
 <div class="max-w-7xl mx-auto px-4 py-8">
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
@@ -134,84 +136,99 @@
     <!-- Kanban Board -->
     @if($files->count() > 0)
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <!-- Recent Files Column -->
-        <div class="bg-gradient-to-b from-blue-50 to-white rounded-2xl shadow-sm border border-blue-100 p-6">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
-                    Recent Files
-                </h3>
-                <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    {{ $files->where('created_at', '>=', now()->subDays(7))->count() }}
-                </span>
+      <!-- Recent Files Column -->
+<div class="bg-gradient-to-b from-blue-50 to-white rounded-2xl shadow-sm border border-blue-100 p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+            Recent Files
+        </h3>
+        <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+            {{ $files->where('created_at', '>=', now()->subDays(7))->count() }}
+        </span>
+    </div>
+    <div class="space-y-4">
+        @foreach($files->where('created_at', '>=', now()->subDays(7))->take(6) as $file)
+            @if($file->canUserAccess(auth()->id()))
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-blue-300">
+                @include('admin.files.partials.file-card', ['file' => $file])
             </div>
-            <div class="space-y-4">
-                @foreach($files->where('created_at', '>=', now()->subDays(7))->take(6) as $file)
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-blue-300">
-                    @include('admin.files.partials.file-card', ['file' => $file])
-                </div>
-                @endforeach
-            </div>
-        </div>
+            @endif
+        @endforeach
+    </div>
+</div>
 
-        <!-- Project Files Column -->
-        <div class="bg-gradient-to-b from-green-50 to-white rounded-2xl shadow-sm border border-green-100 p-6">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                    <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                    Project Files
-                </h3>
-                <span class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    {{ $files->whereNotNull('project_id')->count() }}
-                </span>
+<!-- Project Files Column -->
+<div class="bg-gradient-to-b from-green-50 to-white rounded-2xl shadow-sm border border-green-100 p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+            Project Files
+        </h3>
+        <span class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+            {{ $files->whereNotNull('project_id')->count() }}
+        </span>
+    </div>
+    <div class="space-y-4">
+        @foreach($files->whereNotNull('project_id')->take(6) as $file)
+            @if($file->canUserAccess(auth()->id()))
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-green-300">
+                @include('admin.files.partials.file-card', ['file' => $file])
             </div>
-            <div class="space-y-4">
-                @foreach($files->whereNotNull('project_id')->take(6) as $file)
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-green-300">
-                    @include('admin.files.partials.file-card', ['file' => $file])
-                </div>
-                @endforeach
-            </div>
-        </div>
+            @endif
+        @endforeach
+    </div>
+</div>
 
-        <!-- General Files Column -->
-        <div class="bg-gradient-to-b from-purple-50 to-white rounded-2xl shadow-sm border border-purple-100 p-6">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-                    <div class="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
-                    General Files
-                </h3>
-                <span class="bg-purple-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    {{ $files->whereNull('project_id')->count() }}
-                </span>
+<!-- General Files Column -->
+<div class="bg-gradient-to-b from-purple-50 to-white rounded-2xl shadow-sm border border-purple-100 p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+            <div class="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
+            General Files
+        </h3>
+        <span class="bg-purple-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+            {{ $files->whereNull('project_id')->count() }}
+        </span>
+    </div>
+    <div class="space-y-4">
+        @foreach($files->whereNull('project_id')->take(6) as $file)
+            @if($file->canUserAccess(auth()->id()))
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-purple-300">
+                @include('admin.files.partials.file-card', ['file' => $file])
             </div>
-            <div class="space-y-4">
-                @foreach($files->whereNull('project_id')->take(6) as $file)
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-purple-300">
-                    @include('admin.files.partials.file-card', ['file' => $file])
-                </div>
-                @endforeach
-            </div>
-        </div>
+            @endif
+        @endforeach
+    </div>
+</div>
     </div>
 
     <!-- All Files Grid -->
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-200">
-        <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 rounded-t-2xl">
-            <div class="flex justify-between items-center">
-                <h2 class="text-lg font-medium text-gray-900">All Files ({{ $files->count() }})</h2>
+   <!-- All Files Grid -->
+<div class="bg-white rounded-2xl shadow-sm border border-gray-200">
+    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 rounded-t-2xl">
+        <div class="flex justify-between items-center">
+            <h2 class="text-lg font-medium text-gray-900">All Files ({{ $files->count() }})</h2>
+            @if(auth()->user()->role === 'super_admin')
+            <div class="text-sm text-gray-600">
+                <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Public: {{ $files->where('is_public', true)->count() }}</span>
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs ml-2">Restricted: {{ $files->whereNotNull('accessible_users')->count() }}</span>
             </div>
+            @endif
         </div>
-        <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                @foreach($files as $file)
+    </div>
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach($files as $file)
+                @if($file->canUserAccess(auth()->id()))
                 <div class="bg-gray-50 rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-blue-300">
                     @include('admin.files.partials.file-card', ['file' => $file])
                 </div>
-                @endforeach
-            </div>
+                @endif
+            @endforeach
         </div>
     </div>
+</div>
     @else
         <!-- Empty State -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 text-center py-16">

@@ -19,6 +19,7 @@ class tasks extends Model
         'status',
         'start_date',
         'due_date',
+        'milestone_id'
     ];
 
     protected $dates = [
@@ -32,6 +33,11 @@ class tasks extends Model
 ];
 
 
+
+    public function milestone()
+    {
+        return $this->belongsTo(Milestones::class);
+    }
 
 
     public function assignee()
@@ -195,7 +201,7 @@ public function subtasks()
 
 
 
-    
+
 
     // Get total time spent
     public function getTotalTimeSpentAttribute()
