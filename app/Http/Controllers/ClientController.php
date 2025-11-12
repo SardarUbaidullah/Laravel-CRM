@@ -41,29 +41,26 @@ class ClientController extends Controller
         return view('client.projects.index', compact('projects'));
     }
 
-    public function projectShow(Projects $project)
-    {
-        $client = auth()->user();
+   public function projectShow(Projects $project)
+{
+    $client = auth()->user();
 
-        if ($project->client_id !== $client->client_id) {
-            abort(403, 'Access denied');
-        }
-
-        $project->load([
-            'manager',
-            'tasks' => function($query) {
-                $query->with('assignedTo')->orderBy('due_date', 'asc');
-            },
-            'files' => function($query) {
-                $query->orderBy('created_at', 'desc');
-            },
-            'comments' => function($query) {
-                $query->with('user')->orderBy('created_at', 'desc');
-            }
-        ]);
-
-        return view('client.projects.show', compact('project'));
+    if ($project->client_id !== $client->client_id) {
+        abort(403, 'Access denied');
     }
+
+    $project->load([
+        'manager',
+        'tasks.assignedTo', // Load assignedTo for tasks
+        'tasks.comments.user', // Load comments with user for each task
+        'files' => function($query) {
+            $query->orderBy('created_at', 'desc');
+        },
+        'comments.user' // Load project comments with user
+    ]);
+
+    return view('client.projects.show', compact('project'));
+}
 
     public function addProjectComment(Request $request, Projects $project)
     {

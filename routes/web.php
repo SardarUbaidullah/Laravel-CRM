@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\TimeReportController;
 use App\Http\Controllers\Admin\TimeTrackingController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\TimeLogController;
@@ -38,6 +39,27 @@ use App\Http\Controllers\Manager\SubTaskController as ManagerSubTaskController;
 
 // Home
 // Calendar Routes
+
+// In web.php
+Route::middleware(['auth'])->group(function () {
+    // Comment routes
+    Route::post('/projects/{project}/comments', [CommentController::class, 'storeProjectComment'])->name('comments.project.store');
+    Route::post('/tasks/{task}/comments', [CommentController::class, 'storeTaskComment'])->name('comments.task.store');
+    Route::post('/files/{file}/comments', [CommentController::class, 'storeFileComment'])->name('comments.file.store');
+    Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+
+    // API routes for dynamic loading
+    Route::get('/comments', [CommentController::class, 'getComments'])->name('comments.get');
+});
+// Comment routes
+
+
+
+
+
+
+
 
 
 
@@ -250,7 +272,19 @@ Route::get('/team', [manager_TeamController::class, 'index'])->name('team.index'
 
 
 
-
+Route::prefix('attendance')->group(function () {
+    Route::get('/clear-page', function() {
+        return view('admin.attendance.clear');
+    })->name('attendance.clear.page');
+    Route::post('/clear', [AttendanceController::class, 'clearAllRecords'])
+        ->name('attendance.mark.clear');
+    Route::get('/test', function() {
+        return response()->json([
+            'message' => 'Test route working',
+            'timestamp' => now()
+        ]);
+    })->name('attendance.test');
+});
 
 
 // routes/web.php
@@ -294,5 +328,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
         Route::get('/data/{type}', [AdminReportController::class, 'getReportData']);
     });
 });
+
+
 
 require __DIR__ . '/auth.php';

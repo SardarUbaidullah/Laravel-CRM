@@ -84,16 +84,23 @@ class Projects extends Model
     }
 
     // Comments relationship
- public function comments(): MorphMany
-    {
-        return $this->morphMany(Comment::class, 'commentable');
-    }
+   public function comments()
+{
+    return $this->morphMany(Comment::class, 'commentable');
+}
 
-    // Public comments (visible to clients)
-    public function publicComments(): MorphMany
-    {
-        return $this->morphMany(Comment::class, 'commentable')->where('is_internal', false);
-    }
+public function publicComments()
+{
+    return $this->morphMany(Comment::class, 'commentable')->public();
+}
+
+public function internalComments()
+{
+    return $this->morphMany(Comment::class, 'commentable')->internal();
+}
+
+
+    
 
     public function discussions(): HasMany
     {

@@ -132,6 +132,20 @@
                         @endif
                     </a>
 
+                    {{-- chalendar --}}
+<a href="{{ url('/calendar') }}"
+   class="nav-item flex items-center space-x-4 px-4 py-4 rounded-2xl text-sm font-semibold transition-all duration-300
+   {{ request()->is('team/calendar*') ?
+   'bg-indigo-500/10 text-indigo-600 border border-indigo-200 shadow-sm' :
+   'text-slate-600 hover:bg-white hover:shadow-md hover:border hover:border-slate-200' }}">
+    <div class="w-10 h-10 rounded-xl flex items-center justify-center
+        {{ request()->is('team/calendar*') ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-600' }}">
+        <i class="fas fa-calendar"></i>
+    </div>
+    <span>Calendar</span>
+
+  
+</a>
                     <!-- Profile -->
                     <a href="{{ route('team.profile') }}"
                        class="nav-item flex items-center space-x-4 px-4 py-4 rounded-2xl text-sm font-semibold transition-all duration-300

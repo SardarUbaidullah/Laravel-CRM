@@ -526,7 +526,11 @@
         </div>
     </div>
 </div>
-
+<x-comments
+    :commentable="$task"
+    commentableType="task"
+    :showInternal="auth()->user()->role !== 'client'"
+/>
 <style>
     .animate-fade-in {
         animation: fadeIn 0.5s ease-in-out;

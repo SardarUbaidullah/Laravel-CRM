@@ -123,28 +123,35 @@
                         </div>
 
                         <!-- Task Comments -->
-                        @if($task->comments->count() > 0)
-                        <div class="mt-6 border-t pt-6">
-                            <h5 class="text-sm font-semibold text-gray-900 mb-4 flex items-center">
-                                <i class="fas fa-comments mr-2 text-blue-500"></i>
-                                Comments ({{ $task->comments->count() }})
-                            </h5>
-                            <div class="space-y-3">
-                                @foreach($task->comments as $comment)
-                                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                                    <div class="flex justify-between items-start mb-2">
-                                        <div class="flex items-center space-x-2">
-                                            <span class="font-medium text-sm text-gray-900">{{ $comment->user->name }}</span>
-                                            <span class="w-1 h-1 bg-gray-300 rounded-full"></span>
-                                            <span class="text-xs text-gray-500">{{ $comment->created_at->format('M j, g:i A') }}</span>
-                                        </div>
-                                    </div>
-                                    <p class="text-sm text-gray-700 leading-relaxed">{{ $comment->content }}</p>
-                                </div>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endif
+                      <!-- Task Comments -->
+@if($task->comments && $task->comments->count() > 0)
+<div class="mt-6 border-t pt-6">
+    <h5 class="text-sm font-semibold text-gray-900 mb-4 flex items-center">
+        <i class="fas fa-comments mr-2 text-blue-500"></i>
+        Comments ({{ $task->comments->count() }})
+    </h5>
+    <div class="space-y-3">
+        @foreach($task->comments as $comment)
+        <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <div class="flex justify-between items-start mb-2">
+                <div class="flex items-center space-x-2">
+                    <span class="font-medium text-gray-900">{{ $comment->user->name ?? 'Unknown User' }}</span>
+                    <span class="text-xs text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
+                </div>
+                @if($comment->is_internal)
+                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Internal</span>
+                @endif
+            </div>
+            <p class="text-gray-700 text-sm">{{ $comment->content }}</p>
+        </div>
+        @endforeach
+    </div>
+</div>
+@else
+<div class="mt-6 border-t pt-6">
+    <p class="text-gray-500 text-sm text-center py-4">No comments yet.</p>
+</div>
+@endif
 
                         <!-- Add Comment Form -->
                         <form action="{{ route('client.tasks.comments.store', $task) }}" method="POST" class="mt-6">

@@ -33,11 +33,10 @@ class Comment extends Model
         return $this->belongsTo(User::class);
     }
 
-   public function commentable(): MorphTo
+    public function commentable()
     {
         return $this->morphTo();
     }
-
     // ==================== SCOPES ====================
 
     public function scopePublic($query)
@@ -209,4 +208,10 @@ class Comment extends Model
             }
         });
     }
+
+      // Authorization methods
+
+
+  
+
 }

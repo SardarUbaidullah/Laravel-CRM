@@ -26,20 +26,20 @@ class TeamOwnController extends Controller
         ];
 
         // Get recent tasks
-        $tasks = Tasks::where('assigned_to', $user->id)
-            ->with('project')
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
-
+       $tasks = Tasks::where('assigned_to', auth()->id())
+        ->with('project')
+        ->latest()
+        ->take(5)
+        ->get();
         // Get upcoming deadlines
-        $upcomingDeadlines = Tasks::where('assigned_to', $user->id)
-            ->whereIn('status', ['todo', 'in_progress'])
-            ->where('due_date', '>=', now())
-            ->where('due_date', '<=', now()->addDays(7))
-            ->orderBy('due_date', 'asc')
-            ->limit(3)
-            ->get();
+    $upcomingDeadlines = Tasks::where('assigned_to', auth()->id())
+        ->where('due_date', '>=', now())
+        ->where('status', '!=', 'done')
+        ->with('project')
+        ->orderBy('due_date')
+        ->take(5)
+        ->get();
+
 
         return view('team.index', compact('userStats', 'tasks', 'upcomingDeadlines'));
     }

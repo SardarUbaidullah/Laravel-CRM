@@ -535,4 +535,9 @@
         </div>
     </div>
 </div>
+<x-comments
+    :commentable="$project"
+    commentableType="project"
+    :showInternal="auth()->user()->role !== 'client'"
+/>
 @endsection
