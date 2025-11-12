@@ -1,6 +1,3 @@
-<!-- Alpine.js -->
-<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-
 <!-- Manager Sidebar -->
 <div class="sidebar w-64 flex flex-col h-full bg-white border-r border-gray-200">
 
