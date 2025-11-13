@@ -302,12 +302,11 @@
 
         <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden">
-              <header class="bg-white border-b border-border h-16 px-6 flex items-center justify-between">
-                <!-- Left side - Search and Project Selector -->
-                <div class="flex items-center space-x-6">
-                    <!-- Project Selector -->
-
-                </div>
+            <header class="bg-white border-b border-border h-16 px-6 flex items-center justify-between">
+                <!-- Mobile Menu Button -->
+                <button id="mobileMenuButton" class="lg:hidden block">
+                    <i class="fa-solid fa-bars text-lg"></i>
+                </button>
 
                 <!-- Right side - Icons and Profile -->
                 <div class="flex items-center space-x-4 ml-auto">
@@ -328,33 +327,28 @@
                     <div class="w-px h-6 bg-border mx-2"></div>
 
                     <!-- Profile -->
-                        @auth
-<div class="relative" x-data="{ open: false }">
-    <button
-        @click="open = !open"
-        class="flex items-center space-x-3 focus:outline-none hover:bg-gray-50 rounded-lg p-2 transition-colors duration-200"
-    >
-        <img
-            class="w-8 h-8 rounded-full object-cover"
-            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face"
-            alt="User Avatar"
-        />
-        <div class="text-left">
-            <p class="text-sm font-medium text-card-foreground">
-              {{Auth::user()->name}}
-            </p>
-            <p class="text-xs text-muted-foreground capitalize">
-                Project Manager
-            </p>
-        </div>
-        <svg class="w-4 h-4 text-gray-500 transition-transform duration-200"
-             :class="{ 'rotate-180': open }"
-             fill="none"
-             stroke="currentColor"
-             viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-        </svg>
-    </button>
+                    @auth
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open"
+                                class="flex items-center space-x-3 focus:outline-none hover:bg-gray-50 rounded-lg p-2 transition-colors duration-200">
+                                <img class="w-8 h-8 rounded-full object-cover"
+                                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face"
+                                    alt="User Avatar" />
+                                <div class="text-left">
+                                    <p class="text-sm font-medium text-card-foreground">
+                                        {{ Auth::user()->name }}
+                                    </p>
+                                    <p class="text-xs text-muted-foreground capitalize">
+                                        Project Manager
+                                    </p>
+                                </div>
+                                <svg class="w-4 h-4 text-gray-500 transition-transform duration-200"
+                                    :class="{ 'rotate-180': open }" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
 
                             <!-- Dropdown Menu -->
                             <div x-show="open" @click.away="open = false"
