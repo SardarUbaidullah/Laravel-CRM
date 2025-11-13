@@ -78,8 +78,7 @@
             >
                 <option value="">Select a role</option>
                 <option value="super_admin" {{ old('role') == 'super_admin' ? 'selected' : '' }}>Super Admin</option>
-                <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Admin</option>
-                <option value="manager" {{ old('role') == 'manager' ? 'selected' : '' }}>Manager</option>
+                <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Manager</option>
                 <option value="user" {{ old('role') == 'user' ? 'selected' : '' }}>Team Member</option>
                 <option value="client" {{ old('role') == 'client' ? 'selected' : '' }}>Client</option>
             </select>
