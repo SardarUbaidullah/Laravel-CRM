@@ -17,6 +17,8 @@ class User extends Authenticatable
         'password',
         'role',
         'client_id',
+        'profile_photo_path',
+
     ];
 
     protected $hidden = [
@@ -33,6 +35,14 @@ class User extends Authenticatable
     }
 
     // ==================== RELATIONSHIPS ====================
+
+    public function getProfilePhotoUrlAttribute()
+    {
+        if ($this->profile_photo_path) {
+            return asset('storage/' . $this->profile_photo_path);
+        }
+        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&color=7F9CF5&background=EBF4FF';
+    }
 
     public function client()
     {

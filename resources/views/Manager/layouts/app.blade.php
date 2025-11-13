@@ -203,7 +203,7 @@
                 <!-- Left side - Search and Project Selector -->
                 <div class="flex items-center space-x-6">
                     <!-- Project Selector -->
-                   
+
                 </div>
 
                 <!-- Right side - Icons and Profile -->
@@ -231,7 +231,7 @@
     >
         <img
             class="w-8 h-8 rounded-full object-cover"
-            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face"
+            src="{{ Auth::user()->profile_photo_url }}"
             alt="User Avatar"
         />
         <div class="text-left">

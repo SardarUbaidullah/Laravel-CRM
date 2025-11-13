@@ -3,7 +3,6 @@
         'super_admin' => 'admin.layouts.app',
         'admin' => 'Manager.layouts.app',
         'user' => 'team.app',
-
     };
 @endphp
 
@@ -24,36 +23,37 @@
             Upload New File
         </a>
     </div>
-    <!-- Role-based Information -->
-@php
-    $user = auth()->user();
-@endphp
 
-@if($user->role === 'admin')
-<div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-    <div class="flex items-center">
-        <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        <div>
-            <p class="text-blue-800 font-medium">Manager Access</p>
-            <p class="text-blue-600 text-sm">You can view and manage files from projects you manage.</p>
+    <!-- Role-based Information -->
+    @php
+        $user = auth()->user();
+    @endphp
+
+    @if($user->role === 'admin')
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+        <div class="flex items-center">
+            <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div>
+                <p class="text-blue-800 font-medium">Manager Access</p>
+                <p class="text-blue-600 text-sm">You can view and manage files from projects you manage.</p>
+            </div>
         </div>
     </div>
-</div>
-@elseif($user->role === 'user')
-<div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
-    <div class="flex items-center">
-        <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-        </svg>
-        <div>
-            <p class="text-green-800 font-medium">Team Member Access</p>
-            <p class="text-green-600 text-sm">You can view files from projects where you have assigned tasks.</p>
+    @elseif($user->role === 'user')
+    <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+        <div class="flex items-center">
+            <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div>
+                <p class="text-green-800 font-medium">Team Member Access</p>
+                <p class="text-green-600 text-sm">You can view files from projects where you have assigned tasks.</p>
+            </div>
         </div>
     </div>
-</div>
-@endif
+    @endif
 
     <!-- Success/Error Messages -->
     @if(session('success'))
@@ -73,6 +73,21 @@
             {{ session('error') }}
         </div>
     @endif
+
+    <!-- Professional Mobile Filter Tabs -->
+    <div class="lg:hidden mb-6">
+        <div class="flex space-x-1 bg-white p-1 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+            <button data-category="recent" class="file-filter-tab active flex-1 px-4 py-3 text-sm font-medium rounded-lg bg-blue-100 text-blue-800 whitespace-nowrap transition-all duration-200">
+                Recent ({{ $files->where('created_at', '>=', now()->subDays(7))->count() }})
+            </button>
+            <button data-category="project" class="file-filter-tab flex-1 px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-100 whitespace-nowrap transition-all duration-200">
+                Project ({{ $files->whereNotNull('project_id')->count() }})
+            </button>
+            <button data-category="general" class="file-filter-tab flex-1 px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-100 whitespace-nowrap transition-all duration-200">
+                General ({{ $files->whereNull('project_id')->count() }})
+            </button>
+        </div>
+    </div>
 
     <!-- Quick Stats -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -136,99 +151,98 @@
     <!-- Kanban Board -->
     @if($files->count() > 0)
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-      <!-- Recent Files Column -->
-<div class="bg-gradient-to-b from-blue-50 to-white rounded-2xl shadow-sm border border-blue-100 p-6">
-    <div class="flex items-center justify-between mb-6">
-        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-            <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
-            Recent Files
-        </h3>
-        <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-            {{ $files->where('created_at', '>=', now()->subDays(7))->count() }}
-        </span>
-    </div>
-    <div class="space-y-4">
-        @foreach($files->where('created_at', '>=', now()->subDays(7))->take(6) as $file)
-            @if($file->canUserAccess(auth()->id()))
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-blue-300">
-                @include('admin.files.partials.file-card', ['file' => $file])
+        <!-- Recent Files Column -->
+        <div class="file-column active bg-gradient-to-b from-blue-50 to-white rounded-2xl shadow-sm border border-blue-100 p-6" data-category="recent">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
+                    Recent Files
+                </h3>
+                <span class="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    {{ $files->where('created_at', '>=', now()->subDays(7))->count() }}
+                </span>
             </div>
-            @endif
-        @endforeach
-    </div>
-</div>
+            <div class="space-y-4">
+                @foreach($files->where('created_at', '>=', now()->subDays(7))->take(6) as $file)
+                    @if($file->canUserAccess(auth()->id()))
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-blue-300">
+                        @include('admin.files.partials.file-card', ['file' => $file])
+                    </div>
+                    @endif
+                @endforeach
+            </div>
+        </div>
 
-<!-- Project Files Column -->
-<div class="bg-gradient-to-b from-green-50 to-white rounded-2xl shadow-sm border border-green-100 p-6">
-    <div class="flex items-center justify-between mb-6">
-        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-            <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-            Project Files
-        </h3>
-        <span class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-            {{ $files->whereNotNull('project_id')->count() }}
-        </span>
-    </div>
-    <div class="space-y-4">
-        @foreach($files->whereNotNull('project_id')->take(6) as $file)
-            @if($file->canUserAccess(auth()->id()))
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-green-300">
-                @include('admin.files.partials.file-card', ['file' => $file])
+        <!-- Project Files Column -->
+        <div class="file-column bg-gradient-to-b from-green-50 to-white rounded-2xl shadow-sm border border-green-100 p-6" data-category="project">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <div class="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                    Project Files
+                </h3>
+                <span class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    {{ $files->whereNotNull('project_id')->count() }}
+                </span>
             </div>
-            @endif
-        @endforeach
-    </div>
-</div>
+            <div class="space-y-4">
+                @foreach($files->whereNotNull('project_id')->take(6) as $file)
+                    @if($file->canUserAccess(auth()->id()))
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-green-300">
+                        @include('admin.files.partials.file-card', ['file' => $file])
+                    </div>
+                    @endif
+                @endforeach
+            </div>
+        </div>
 
-<!-- General Files Column -->
-<div class="bg-gradient-to-b from-purple-50 to-white rounded-2xl shadow-sm border border-purple-100 p-6">
-    <div class="flex items-center justify-between mb-6">
-        <h3 class="text-lg font-semibold text-gray-900 flex items-center">
-            <div class="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
-            General Files
-        </h3>
-        <span class="bg-purple-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-            {{ $files->whereNull('project_id')->count() }}
-        </span>
-    </div>
-    <div class="space-y-4">
-        @foreach($files->whereNull('project_id')->take(6) as $file)
-            @if($file->canUserAccess(auth()->id()))
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-purple-300">
-                @include('admin.files.partials.file-card', ['file' => $file])
+        <!-- General Files Column -->
+        <div class="file-column bg-gradient-to-b from-purple-50 to-white rounded-2xl shadow-sm border border-purple-100 p-6" data-category="general">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <div class="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
+                    General Files
+                </h3>
+                <span class="bg-purple-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                    {{ $files->whereNull('project_id')->count() }}
+                </span>
             </div>
-            @endif
-        @endforeach
-    </div>
-</div>
+            <div class="space-y-4">
+                @foreach($files->whereNull('project_id')->take(6) as $file)
+                    @if($file->canUserAccess(auth()->id()))
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-purple-300">
+                        @include('admin.files.partials.file-card', ['file' => $file])
+                    </div>
+                    @endif
+                @endforeach
+            </div>
+        </div>
     </div>
 
     <!-- All Files Grid -->
-   <!-- All Files Grid -->
-<div class="bg-white rounded-2xl shadow-sm border border-gray-200">
-    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 rounded-t-2xl">
-        <div class="flex justify-between items-center">
-            <h2 class="text-lg font-medium text-gray-900">All Files ({{ $files->count() }})</h2>
-            @if(auth()->user()->role === 'super_admin')
-            <div class="text-sm text-gray-600">
-                <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Public: {{ $files->where('is_public', true)->count() }}</span>
-                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs ml-2">Restricted: {{ $files->whereNotNull('accessible_users')->count() }}</span>
-            </div>
-            @endif
-        </div>
-    </div>
-    <div class="p-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach($files as $file)
-                @if($file->canUserAccess(auth()->id()))
-                <div class="bg-gray-50 rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-blue-300">
-                    @include('admin.files.partials.file-card', ['file' => $file])
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 rounded-t-2xl">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-medium text-gray-900">All Files ({{ $files->count() }})</h2>
+                @if(auth()->user()->role === 'super_admin')
+                <div class="text-sm text-gray-600">
+                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Public: {{ $files->where('is_public', true)->count() }}</span>
+                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs ml-2">Restricted: {{ $files->whereNotNull('accessible_users')->count() }}</span>
                 </div>
                 @endif
-            @endforeach
+            </div>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach($files as $file)
+                    @if($file->canUserAccess(auth()->id()))
+                    <div class="bg-gray-50 rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all duration-200 hover:border-blue-300">
+                        @include('admin.files.partials.file-card', ['file' => $file])
+                    </div>
+                    @endif
+                @endforeach
+            </div>
         </div>
     </div>
-</div>
     @else
         <!-- Empty State -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-200 text-center py-16">
@@ -249,7 +263,84 @@
     @endif
 </div>
 
+<script>
+// Professional file filter - clean and working
+document.addEventListener('DOMContentLoaded', function() {
+    const filterTabs = document.querySelectorAll('.file-filter-tab');
+    const fileColumns = document.querySelectorAll('.file-column');
+
+    // Initialize mobile view
+    function initMobileView() {
+        if (window.innerWidth < 1024) {
+            fileColumns.forEach((col, index) => {
+                if (index === 0) {
+                    col.style.display = 'block';
+                } else {
+                    col.style.display = 'none';
+                }
+            });
+        } else {
+            fileColumns.forEach(col => {
+                col.style.display = 'block';
+            });
+        }
+    }
+
+    // Filter tab click handler
+    filterTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const category = this.getAttribute('data-category');
+
+            // Update active tab
+            filterTabs.forEach(t => {
+                t.classList.remove('active', 'bg-blue-100', 'text-blue-800');
+                t.classList.add('text-gray-600', 'hover:bg-gray-100');
+            });
+            this.classList.remove('text-gray-600', 'hover:bg-gray-100');
+            this.classList.add('active', 'bg-blue-100', 'text-blue-800');
+
+            // Show selected column, hide others on mobile
+            if (window.innerWidth < 1024) {
+                fileColumns.forEach(col => {
+                    if (col.getAttribute('data-category') === category) {
+                        col.style.display = 'block';
+                    } else {
+                        col.style.display = 'none';
+                    }
+                });
+            }
+        });
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        initMobileView();
+    });
+
+    // Initial setup
+    initMobileView();
+});
+</script>
+
 <style>
+@media (max-width: 1023px) {
+    .file-column {
+        display: none;
+    }
+    .file-column:first-child {
+        display: block;
+    }
+}
+
+.file-filter-tab.active {
+    background-color: rgb(219, 234, 254);
+    color: rgb(29, 78, 216);
+}
+
+.file-filter-tab {
+    transition: all 0.2s ease-in-out;
+}
+
 .hover\:shadow-md {
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }

@@ -123,7 +123,7 @@
                 <div class="flex items-center space-x-3 p-3 rounded-2xl bg-white/80 border border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-300">
                     <div class="relative">
                         <img class="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-md"
-                             src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&h=120&fit=crop&crop=face"
+                             src="{{ Auth::user()->profile_photo_url }}"
                              alt="{{ auth()->user()->name }}">
                         <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white"></div>
                     </div>

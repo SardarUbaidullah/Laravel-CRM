@@ -30,7 +30,19 @@ use App\Http\Controllers\Manager\TeamController as manager_TeamController;
 use App\Http\Controllers\Manager\SubTaskController as ManagerSubTaskController;
 
 
+Route::middleware('auth')->group(function () {
+    // Custom Profile Routes - Use Blade template instead of Inertia
+    Route::get('/profile', function () {
+        return view('profile.custom-profile');
+    })->name('profile.edit');
 
+    // Profile update routes
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('password.update');
+    Route::post('/profile/photo', [ProfileController::class, 'updateProfilePhoto'])->name('profile.photo.update');
+    Route::delete('/profile/photo', [ProfileController::class, 'deleteProfilePhoto'])->name('profile.photo.delete');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -85,7 +97,6 @@ Route::prefix('team')->name('team.')->group(function () {
      Route::post('/tasks/{task}/complete-task', [TeamOwnController::class, 'completeTask'])->name('tasks.complete-task');
     Route::post('/tasks/{task}/update-status', [TeamOwnController::class, 'updateStatus'])->name('tasks.update-status');
     Route::get('/projects', [TeamOwnController::class, 'projects'])->name('projects');
-    Route::get('/profile', [TeamOwnController::class, 'profile'])->name('profile');
     Route::post('/tasks/{task}/complete', [TeamOwnController::class, 'complete'])->name('tasks.complete');
 
     // Team chat routes - using same controller but different route names
@@ -141,9 +152,7 @@ Route::post('/pusher/auth', function (Request $request) {
 |--------------------------------------------------------------------------
 */
 Route::middleware('auth')->group(function(){
-        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
 
     Route::get('/calendar', [App\Http\Controllers\Manager\CalendarController::class, 'index'])->name('manager.calendar.index');
 Route::get('/calendar/events', [App\Http\Controllers\Manager\CalendarController::class, 'getEvents'])->name('manager.calendar.events');
@@ -156,7 +165,7 @@ Route::get('/calendar/events', [App\Http\Controllers\Manager\CalendarController:
      Route::get('/files/{id}/new-version', [FileController::class, 'showNewVersionForm'])->name('files.new-version-form');
     Route::post('/files/{id}/new-version', [FileController::class, 'newVersion'])->name('files.new-version');
     // Admin - Users
-    Route::resource('users', UserController::class);
+Route::resource('users', UserController::class);
 
     // File access management routes
 Route::get('/files/{id}/access', [FileController::class, 'manageAccess'])->name('files.manage-access');
@@ -306,14 +315,18 @@ Route::prefix('client')->name('client.')->middleware(['auth', 'client.access'])-
 Route::prefix('admin')->middleware(['auth'])->group(function () {
 
     // Professional Time Analytics
+    // ... other routes ...
+
     Route::prefix('time-reports')->group(function () {
         Route::get('/', [TimeReportController::class, 'index'])->name('admin.time-reports');
         Route::get('/summary', [TimeReportController::class, 'getTimeSummary']);
         Route::get('/detailed', [TimeReportController::class, 'getDetailedReport']);
         Route::get('/team-activity', [TimeReportController::class, 'getTeamActivity']);
         Route::get('/weekly-summary', [TimeReportController::class, 'getWeeklySummary']);
+        Route::get('/user-performance', [TimeReportController::class, 'getUserPerformanceReport']);
         Route::post('/export', [TimeReportController::class, 'exportReport']);
     });
+
 
    Route::post('/time-tracking/start-timer', [TimeTrackingController::class, 'startTimer']);
         Route::post('/time-tracking/stop-timer', [TimeTrackingController::class, 'stopTimer']);

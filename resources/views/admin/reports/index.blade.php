@@ -6,6 +6,7 @@
     <title>Project Analytics</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <style>
         .report-tab {
             transition: all 0.2s ease-in-out;
@@ -22,112 +23,235 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .sidebar-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <!-- Header -->
-    <div class="bg-white shadow">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-6">
-                <div class="flex items-center">
-                    <h1 class="text-3xl font-bold text-gray-900">Project Analytics</h1>
-                    <span class="ml-3 text-sm text-gray-500">Progress, workload, and performance analytics</span>
+<body class="bg-gray-50">
+    <!-- Main Layout Container -->
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        @include('admin.layouts.sidebar')
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <header class="bg-white border-b border-border h-16 px-6 flex items-center justify-between">
+                <!-- Left side - Search and Project Selector -->
+                <div class="flex items-center space-x-6">
+                    <!-- Project Selector -->
                 </div>
-                <button type="button" id="refreshBtn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-200">
-                    <i class="fas fa-refresh mr-2"></i>Refresh Data
-                </button>
-            </div>
+
+                <!-- Right side - Icons and Profile -->
+                <div class="flex items-center space-x-4">
+                    <!-- Icons -->
+                    <div class="flex items-center space-x-2">
+                        <button class="p-2 text-muted-foreground hover:bg-accent-hover hover:text-accent-foreground rounded-lg transition-colors duration-200">
+                           <a href="{{url("/calendar")}}"> <i class="fas fa-calendar"></i></a>
+                        </button>
+
+                        <button class="p-2 text-muted-foreground hover:bg-accent-hover hover:text-accent-foreground rounded-lg transition-colors duration-200">
+                            <a href="{{url("/chat")}}"><i class="fas fa-comment"></i></a>
+                        </button>
+
+                        <button type="button" id="refreshBtn" class="p-2 text-muted-foreground hover:bg-accent-hover hover:text-accent-foreground rounded-lg transition-colors duration-200">
+                            <i class="fas fa-refresh"></i>
+                        </button>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="w-px h-6 bg-border mx-2"></div>
+
+                    <!-- Profile -->
+                <!-- Profile Dropdown -->
+                @auth
+                <div class="relative" x-data="{ open: false }">
+    <button
+        @click="open = !open"
+        class="flex items-center space-x-3 focus:outline-none hover:bg-gray-50 rounded-lg p-2 transition-colors duration-200"
+    >
+        <img
+            class="w-8 h-8 rounded-full object-cover"
+            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face"
+            alt="User Avatar"
+        />
+        <div class="text-left">
+            <p class="text-sm font-medium text-card-foreground">
+              {{Auth::user()->name}}
+            </p>
+            <p class="text-xs text-muted-foreground capitalize">
+                super admin
+            </p>
         </div>
+        <svg class="w-4 h-4 text-gray-500 transition-transform duration-200"
+             :class="{ 'rotate-180': open }"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+    </button>
+
+    <!-- Dropdown Menu -->
+    <div
+        x-show="open"
+        @click.away="open = false"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 transform -translate-y-2"
+        x-transition:enter-end="opacity-100 transform translate-y-0"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 transform translate-y-0"
+        x-transition:leave-end="opacity-0 transform -translate-y-2"
+        class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+        style="display: none;"
+    >
+        <!-- User Info -->
+        <div class="px-4 py-2 border-b border-gray-100">
+            <p class="text-sm font-medium text-gray-900">{{Auth::user()->name}}</p>
+            <p class="text-xs text-gray-500">{{Auth::user()->email}}</p>
+        </div>
+
+        <!-- Profile Link -->
+        <a
+            href="{{ route('profile.edit') }}"
+            class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+        >
+            <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            Profile
+        </a>
+
+        <!-- Settings Link -->
+
+        <!-- Divider -->
+        <div class="border-t border-gray-100 my-1"></div>
+
+        <!-- Logout Form -->
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button
+                type="submit"
+                class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
+            >
+                <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+                Log Out
+            </button>
+        </form>
     </div>
+</div>
+                @endauth
+                </div>
+            </header>
 
-    <!-- Quick Stats -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Projects Card -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-project-diagram text-white text-xl"></i>
+            <!-- Main Content -->
+            <div class="flex-1 overflow-y-auto">
+                <!-- Page Header in Body -->
+                <div class="bg-white border-b">
+                    <div class="max-w-7xl mx-auto px-6 py-8">
+                        <div class="flex items-center space-x-6">
+                            <div class="flex items-center">
+                                <h1 class="text-3xl font-bold text-gray-900">Project Analytics</h1>
+                                <span class="ml-4 text-lg text-gray-500">Progress, workload, and performance analytics</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="ml-4">
-                        <h3 class="text-sm font-medium text-gray-500">Total Projects</h3>
-                        <p id="totalProjects" class="text-2xl font-bold text-gray-900">--</p>
-                        <p class="text-sm text-green-600" id="projectGrowth">Active projects</p>
-                    </div>
                 </div>
-            </div>
 
-            <!-- Tasks Card -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-tasks text-white text-xl"></i>
+                <!-- Quick Stats -->
+                <div class="max-w-7xl mx-auto px-6 py-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <!-- Projects Card -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-300">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center shadow-md">
+                                        <i class="fas fa-project-diagram text-white text-xl"></i>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-sm font-medium text-gray-500">Total Projects</h3>
+                                    <p id="totalProjects" class="text-2xl font-bold text-gray-900">--</p>
+                                    <p class="text-sm text-green-600 font-medium" id="projectGrowth">Active projects</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tasks Card -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-300">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center shadow-md">
+                                        <i class="fas fa-tasks text-white text-xl"></i>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-sm font-medium text-gray-500">Completed Tasks</h3>
+                                    <p id="completedTasks" class="text-2xl font-bold text-gray-900">--</p>
+                                    <p class="text-sm text-green-600 font-medium" id="taskCompletionRate">All tasks</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Team Card -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-300">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center shadow-md">
+                                        <i class="fas fa-users text-white text-xl"></i>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-sm font-medium text-gray-500">Team Members</h3>
+                                    <p id="activeTeam" class="text-2xl font-bold text-gray-900">--</p>
+                                    <p class="text-sm text-gray-600 font-medium" id="teamProductivity">Active users</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Performance Card -->
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-300">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center shadow-md">
+                                        <i class="fas fa-chart-line text-white text-xl"></i>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-sm font-medium text-gray-500">Completion Rate</h3>
+                                    <p id="avgPerformance" class="text-2xl font-bold text-gray-900">--</p>
+                                    <p class="text-sm text-green-600 font-medium" id="performanceTrend">Overall progress</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="ml-4">
-                        <h3 class="text-sm font-medium text-gray-500">Completed Tasks</h3>
-                        <p id="completedTasks" class="text-2xl font-bold text-gray-900">--</p>
-                        <p class="text-sm text-green-600" id="taskCompletionRate">All tasks</p>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Team Card -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-users text-white text-xl"></i>
+                    <!-- Report Navigation -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+                        <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+                            <button type="button" id="progressTab" class="flex-1 py-3 px-4 text-center font-medium rounded-md transition duration-200 report-tab active-tab">
+                                <i class="fas fa-chart-bar mr-2"></i>Progress
+                            </button>
+                            <button type="button" id="workloadTab" class="flex-1 py-3 px-4 text-center font-medium rounded-md transition duration-200 report-tab">
+                                <i class="fas fa-user-check mr-2"></i>Workload
+                            </button>
+                            <button type="button" id="performanceTab" class="flex-1 py-3 px-4 text-center font-medium rounded-md transition duration-200 report-tab">
+                                <i class="fas fa-trophy mr-2"></i>Performance
+                            </button>
                         </div>
                     </div>
-                    <div class="ml-4">
-                        <h3 class="text-sm font-medium text-gray-500">Team Members</h3>
-                        <p id="activeTeam" class="text-2xl font-bold text-gray-900">--</p>
-                        <p class="text-sm text-gray-600" id="teamProductivity">Active users</p>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Performance Card -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-chart-line text-white text-xl"></i>
+                    <!-- Report Content -->
+                    <div id="reportContent">
+                        <div class="text-center py-12">
+                            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                            <p class="text-gray-600">Loading analytics...</p>
                         </div>
                     </div>
-                    <div class="ml-4">
-                        <h3 class="text-sm font-medium text-gray-500">Completion Rate</h3>
-                        <p id="avgPerformance" class="text-2xl font-bold text-gray-900">--</p>
-                        <p class="text-sm text-green-600" id="performanceTrend">Overall progress</p>
-                    </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Report Navigation -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-            <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg">
-                <button type="button" id="progressTab" class="flex-1 py-3 px-4 text-center font-medium rounded-md transition duration-200 report-tab active-tab">
-                    <i class="fas fa-chart-bar mr-2"></i>Progress
-                </button>
-                <button type="button" id="workloadTab" class="flex-1 py-3 px-4 text-center font-medium rounded-md transition duration-200 report-tab">
-                    <i class="fas fa-user-check mr-2"></i>Workload
-                </button>
-                <button type="button" id="performanceTab" class="flex-1 py-3 px-4 text-center font-medium rounded-md transition duration-200 report-tab">
-                    <i class="fas fa-trophy mr-2"></i>Performance
-                </button>
-            </div>
-        </div>
-
-        <!-- Report Content -->
-        <div id="reportContent">
-            <div class="text-center py-12">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p class="text-gray-600">Loading analytics...</p>
             </div>
         </div>
     </div>
@@ -299,7 +423,7 @@
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Projects</h3>
                         <div class="space-y-3">
                             ${recentProjects.map(project => `
-                                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-200">
                                     <div class="flex items-center">
                                         <div class="w-3 h-3 rounded-full ${getProjectStatusColor(project.status)} mr-3"></div>
                                         <div>
@@ -338,8 +462,8 @@
                             <div class="text-sm text-gray-600">Total Tasks</div>
                         </div>
                         <div class="bg-white rounded-lg p-4 text-center border border-gray-200">
-                            <div class="text-2xl font-bold text-purple-600">${summary.total_completed || 0}</div>
-                            <div class="text-sm text-gray-600">Completed</div>
+                            <div class="text-2xl font-bold text-purple-600">${summary.total_managed_projects || 0}</div>
+                            <div class="text-sm text-gray-600">Managed Projects</div>
                         </div>
                         <div class="bg-white rounded-lg p-4 text-center border border-gray-200">
                             <div class="text-2xl font-bold text-yellow-600">${summary.total_in_progress || 0}</div>
@@ -351,36 +475,50 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Team Workload</h3>
                         <div class="space-y-4">
-                            ${teamWorkload.map(member => `
-                                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                            ${teamWorkload.map(member => {
+                                const isAdmin = member.user?.role === 'admin';
+                                const isTaskBased = member.workload_type === 'task_based';
+                                const userName = member.user?.name || 'Unknown User';
+                                const userInitial = userName.charAt(0).toUpperCase();
+
+                                const itemLabel = isTaskBased ? 'tasks' : 'projects';
+                                const completedLabel = isTaskBased ? 'Done' : 'Completed';
+                                const todoLabel = isTaskBased ? 'To Do' : 'Planning';
+
+                                return `
+                                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-200">
                                     <div class="flex items-center space-x-4">
-                                        <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                            <span class="text-sm font-medium text-white">${member.user.name.charAt(0)}</span>
+                                        <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-md">
+                                            <span class="text-sm font-medium text-white">${userInitial}</span>
                                         </div>
                                         <div>
-                                            <div class="font-medium text-gray-900">${member.user.name}</div>
-                                            <div class="text-sm text-gray-500">${member.total_tasks || 0} total tasks</div>
+                                            <div class="font-medium text-gray-900">${userName}</div>
+                                            <div class="text-sm text-gray-500 flex items-center">
+                                                ${member.total_items || 0} total ${itemLabel}
+                                                ${isAdmin ? '<span class="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Admin</span>' : ''}
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="flex items-center space-x-6">
                                         <div class="text-center">
-                                            <div class="text-lg font-bold text-green-600">${member.completed_tasks || 0}</div>
-                                            <div class="text-xs text-gray-500">Done</div>
+                                            <div class="text-lg font-bold text-green-600">${member.completed_items || 0}</div>
+                                            <div class="text-xs text-gray-500">${completedLabel}</div>
                                         </div>
                                         <div class="text-center">
-                                            <div class="text-lg font-bold text-yellow-600">${member.in_progress_tasks || 0}</div>
+                                            <div class="text-lg font-bold text-yellow-600">${member.in_progress_items || 0}</div>
                                             <div class="text-xs text-gray-500">In Progress</div>
                                         </div>
                                         <div class="text-center">
-                                            <div class="text-lg font-bold text-gray-600">${member.todo_tasks || 0}</div>
-                                            <div class="text-xs text-gray-500">To Do</div>
+                                            <div class="text-lg font-bold text-gray-600">${member.todo_items || 0}</div>
+                                            <div class="text-xs text-gray-500">${todoLabel}</div>
                                         </div>
                                         <span class="px-3 py-1 text-xs font-medium rounded-full ${getWorkloadLevelColor(member.workload_level)}">
                                             ${member.workload_level}
                                         </span>
                                     </div>
                                 </div>
-                            `).join('')}
+                                `;
+                            }).join('')}
                             ${teamWorkload.length === 0 ? '<p class="text-center text-gray-500 py-4">No team members found</p>' : ''}
                         </div>
                     </div>
@@ -420,33 +558,57 @@
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Individual Performance</h3>
                         <div class="space-y-4">
-                            ${userPerformance.map(performance => `
-                                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                            ${userPerformance.map(performance => {
+                                const isAdmin = performance.user?.role === 'admin';
+                                const isTaskBased = performance.performance_type === 'task_based';
+                                const userName = performance.user?.name || 'Unknown User';
+                                const userInitial = userName.charAt(0).toUpperCase();
+
+                                return `
+                                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-200">
                                     <div class="flex items-center space-x-4">
-                                        <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center">
-                                            <span class="text-sm font-medium text-white">${performance.user.name.charAt(0)}</span>
+                                        <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center shadow-md">
+                                            <span class="text-sm font-medium text-white">${userInitial}</span>
                                         </div>
                                         <div>
-                                            <div class="font-medium text-gray-900">${performance.user.name}</div>
-                                            <div class="text-sm text-gray-500">${performance.total_tasks || 0} assigned tasks</div>
+                                            <div class="font-medium text-gray-900">${userName}</div>
+                                            <div class="text-sm text-gray-500 flex items-center">
+                                                ${isTaskBased
+                                                    ? `${performance.total_tasks || 0} assigned tasks`
+                                                    : `${performance.total_projects || 0} managed projects`
+                                                }
+                                                ${isAdmin ? '<span class="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Admin</span>' : ''}
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="flex items-center space-x-6">
                                         <div class="text-center">
-                                            <div class="text-lg font-bold text-green-600">${performance.completed_tasks || 0}</div>
-                                            <div class="text-xs text-gray-500">Completed</div>
+                                            <div class="text-lg font-bold text-green-600">
+                                                ${isTaskBased
+                                                    ? (performance.completed_tasks || 0)
+                                                    : (performance.completed_projects || 0)
+                                                }
+                                            </div>
+                                            <div class="text-xs text-gray-500">
+                                                ${isTaskBased ? 'Completed' : 'Projects Done'}
+                                            </div>
                                         </div>
                                         <div class="text-center">
-                                            <div class="text-lg font-bold ${getCompletionRateColor(performance.completion_rate || 0)}">${performance.completion_rate || 0}%</div>
+                                            <div class="text-lg font-bold ${getCompletionRateColor(performance.completion_rate || 0)}">
+                                                ${performance.completion_rate || 0}%
+                                            </div>
                                             <div class="text-xs text-gray-500">Completion Rate</div>
                                         </div>
-                                        <span class="px-3 py-1 text-xs font-medium rounded-full ${getPerformanceLevelColor(performance.performance_level)}">
-                                            ${performance.performance_level}
+                                        <span class="px-3 py-1 text-xs font-medium rounded-full ${getPerformanceLevelColor(performance.performance_level || 'Needs Improvement')}">
+                                            ${performance.performance_level || 'Needs Improvement'}
                                         </span>
                                     </div>
                                 </div>
-                            `).join('')}
-                            ${userPerformance.length === 0 ? '<p class="text-center text-gray-500 py-4">No performance data available</p>' : ''}
+                                `;
+                            }).join('')}
+                            ${userPerformance.length === 0 ?
+                                '<div class="text-center py-8"><i class="fas fa-users text-gray-300 text-4xl mb-3"></i><p class="text-gray-500">No performance data available</p></div>' :
+                                ''}
                         </div>
                     </div>
                 </div>

@@ -40,7 +40,7 @@
                     <span class="flex-1">Messages</span>
 
                     <!-- Message count badge -->
-                    <span class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center shadow-sm">3</span>
+                    <span class="bg-red-500 text-white text-xs p-1 rounded-full min-w-[20px] text-center shadow-sm">Chat</span>
                 </a>
 
                 <!-- Tasks Dropdown -->
@@ -64,7 +64,7 @@
                         <div class="flex items-center space-x-2">
                             <!-- Task count -->
                             <span class="bg-primary/20 text-primary text-xs px-2 py-1 rounded-full font-medium shadow-sm">
-                                12
+                               {{ \App\Models\Tasks::count() }}
                             </span>
                             <!-- Animated chevron -->
                             <i :class="openDropdown === 'tasks' ?
@@ -120,7 +120,7 @@
 
                         <div class="flex items-center space-x-2">
                             <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-sm">
-                                8
+{{ \App\Models\User::where('role', '!=', 'admin')->count() }}
                             </span>
                             <i :class="openDropdown === 'users' ?
                                 'fas fa-chevron-up text-primary transform transition-transform duration-300' :
@@ -174,8 +174,7 @@
 
                         <div class="flex items-center space-x-2">
                             <span class="bg-orange-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-sm">
-                                5
-                            </span>
+{{ \App\Models\Projects::count() }}                            </span>
                             <i :class="openDropdown === 'projects' ?
                                 'fas fa-chevron-up text-primary transform transition-transform duration-300' :
                                 'fas fa-chevron-down text-muted-foreground group-hover:text-sidebar-foreground transform transition-transform duration-300'"
@@ -228,7 +227,7 @@
 
                         <div class="flex items-center space-x-2">
                             <span class="bg-cyan-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-sm">
-                                24
+                               {{ \App\Models\Files::count() }}
                             </span>
                             <i :class="openDropdown === 'files' ?
                                 'fas fa-chevron-up text-primary transform transition-transform duration-300' :
@@ -273,7 +272,21 @@
     <span class="flex-1">TimeLogs</span>
 
     <span class="bg-pink-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-sm">
-        16
+        {{ \App\Models\TimeLog::count() }}
+    </span>
+</a>
+
+<a href="{{ route('admin.reports') }}"
+   class="flex items-center space-x-4 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-sidebar-foreground {{ request()->routeIs('admin.reports*') ? 'bg-sidebar-accent text-sidebar-foreground' : '' }}">
+
+    <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 {{ request()->routeIs('admin.reports*') ? 'bg-primary/20 text-primary' : 'bg-sidebar-accent text-muted-foreground' }} group-hover:text-sidebar-foreground group-hover:bg-primary/10">
+        <i class="fas fa-chart-bar text-sm"></i>
+    </div>
+
+    <span class="flex-1">Analytics</span>
+
+    <span class="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-sm">
+        Stats
     </span>
 </a>
             </nav>

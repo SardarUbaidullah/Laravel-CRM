@@ -9,6 +9,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -234,7 +236,7 @@
     >
         <img
             class="w-8 h-8 rounded-full object-cover"
-            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face"
+            src="{{ Auth::user()->profile_photo_url }}"
             alt="User Avatar"
         />
         <div class="text-left">
@@ -399,56 +401,6 @@
     </div>
 
  <script>
-        // Sample data
-        const teamMembers = [
-            {
-                id: 1,
-                name: 'Sarah Kim',
-                email: 'sarah@example.com',
-                role: 'Project Manager',
-                status: 'active',
-                lastLogin: '2 hours ago',
-                avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-                joinDate: '2023-01-15'
-            },
-            {
-                id: 2,
-                name: 'Mike Rodriguez',
-                email: 'mike@example.com',
-                role: 'Frontend Developer',
-                status: 'active',
-                lastLogin: '1 hour ago',
-                avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
-                joinDate: '2023-02-20'
-            },
-            {
-                id: 3,
-                name: 'Alex Chen',
-                email: 'alex@example.com',
-                role: 'Backend Developer',
-                status: 'active',
-                lastLogin: '30 minutes ago',
-                avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-                joinDate: '2023-01-10'
-            },
-            {
-                id: 4,
-                name: 'Priya Patel',
-                email: 'priya@example.com',
-                role: 'UI/UX Designer',
-                status: 'inactive',
-                lastLogin: '3 days ago',
-                avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-                joinDate: '2023-03-05'
-            }
-        ];
-
-        const projects = [
-            { id: 1, name: 'Website Redesign', status: 'in_progress' },
-            { id: 2, name: 'Mobile App', status: 'in_progress' },
-            { id: 3, name: 'E-commerce Platform', status: 'completed' },
-            { id: 4, name: 'CRM System', status: 'planning' }
-        ];
 
         const systemMetrics = {
             serverLoad: 45,

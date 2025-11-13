@@ -126,8 +126,7 @@ public function update(Request $request, User $user)
 
     $user->update($updateData);
 
-    return redirect()->route('
-    users.index')->with('success', 'User updated successfully.');
+    return redirect()->route('users.index')->with('success', 'User updated successfully.');
 }
 
     public function destroy(User $user)
@@ -138,7 +137,7 @@ public function update(Request $request, User $user)
         }
 
         $user->delete();
-        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully.');
+        return redirect()->route('users.index')->with('success', 'User deleted successfully.');
     }
 
 

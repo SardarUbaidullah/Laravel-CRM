@@ -10,19 +10,8 @@
             <div class="flex justify-between items-center py-6">
                 <div class="flex items-center">
                     <h1 class="text-3xl font-bold text-gray-900">Time Tracking Reports</h1>
-                    <span class="ml-3 text-sm text-gray-500">Track and analyze team time</span>
                 </div>
-                <div class="flex space-x-3">
-                    <button id="refreshBtn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-200">
-                        <i class="fas fa-refresh mr-2"></i>Refresh
-                    </button>
-                    <select id="dateRange" class="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg">
-                        <option value="7">Last 7 Days</option>
-                        <option value="30" selected>Last 30 Days</option>
-                        <option value="90">Last 90 Days</option>
-                        <option value="365">Last Year</option>
-                    </select>
-                </div>
+
             </div>
         </div>
     </div>
@@ -113,11 +102,7 @@
             <div class="px-6 py-4 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-gray-900">Detailed Time Entries</h3>
-                    <div class="flex space-x-2">
-                        <button id="exportBtn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition duration-200">
-                            <i class="fas fa-download mr-2"></i>Export
-                        </button>
-                    </div>
+
                 </div>
             </div>
             <div class="p-6">
@@ -132,9 +117,41 @@
     </div>
 </div>
 
+<!-- Export Modal -->
+<div id="exportModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-4 border w-full max-w-md shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
+                <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+            </div>
+            <div class="mt-2 text-center">
+                <h3 class="text-lg font-medium text-gray-900">Export Report</h3>
+                <div class="mt-2 px-4 py-3">
+                    <label for="exportType" class="block text-sm font-medium text-gray-700 mb-2">Export Format</label>
+                    <select id="exportType" class="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="json">JSON</option>
+                        <option value="csv">CSV</option>
+                    </select>
+                </div>
+            </div>
+            <div class="items-center px-4 py-3">
+                <button id="confirmExport" class="px-4 py-2 bg-blue-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Export
+                </button>
+                <button id="cancelExport" class="mt-2 px-4 py-2 bg-gray-300 text-gray-700 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let currentDateRange = '30';
+    let globalTimerInterval = null;
 
     // Initialize
     loadRunningTimer();
@@ -144,11 +161,29 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listeners
     document.getElementById('refreshBtn').addEventListener('click', refreshAll);
     document.getElementById('dateRange').addEventListener('change', filterReports);
-    document.getElementById('exportBtn').addEventListener('click', exportReport);
+    document.getElementById('exportBtn').addEventListener('click', function() {
+        document.getElementById('exportModal').classList.remove('hidden');
+    });
+
+    document.getElementById('cancelExport').addEventListener('click', function() {
+        document.getElementById('exportModal').classList.add('hidden');
+    });
+
+    document.getElementById('confirmExport').addEventListener('click', function() {
+        const format = document.getElementById('exportType').value;
+        exportReport(format);
+        document.getElementById('exportModal').classList.add('hidden');
+    });
 
     // Load running timer
     async function loadRunningTimer() {
         try {
+            // Clear any existing interval
+            if (globalTimerInterval) {
+                clearInterval(globalTimerInterval);
+                globalTimerInterval = null;
+            }
+
             const response = await fetch('/admin/time-tracking/running-timer');
             const data = await response.json();
 
@@ -164,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                                 <div>
                                     <div class="font-semibold text-yellow-800">Timer Running</div>
-                                    <div class="text-sm text-yellow-600">${data.timer.task.title} - ${data.timer.user.name}</div>
+                                    <div class="text-sm text-yellow-600">${data.timer.task?.title || 'Unknown Task'} - ${data.timer.user?.name || 'Unknown User'}</div>
                                 </div>
                             </div>
                             <div class="flex items-center space-x-4">
@@ -189,7 +224,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Global timer functions
     function startGlobalTimer(startTime) {
         const start = new Date(startTime);
-        setInterval(() => {
+
+        // Clear any existing interval
+        if (globalTimerInterval) {
+            clearInterval(globalTimerInterval);
+        }
+
+        globalTimerInterval = setInterval(() => {
             const now = new Date();
             const diff = now - start;
 
@@ -220,6 +261,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 showNotification('Timer stopped: ' + data.duration, 'success');
                 refreshAll();
+            } else {
+                showNotification('Error stopping timer: ' + data.message, 'error');
             }
         } catch (error) {
             showNotification('Error stopping timer', 'error');
@@ -251,6 +294,26 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error loading time summary:', error);
             showNotification('Failed to load summary data', 'error');
+
+            // Show error states
+            document.getElementById('timeByUser').innerHTML = `
+                <div class="text-center py-8 text-red-600">
+                    <i class="fas fa-exclamation-triangle text-3xl mb-3"></i>
+                    <p class="text-sm">Failed to load team data</p>
+                </div>
+            `;
+            document.getElementById('timeByProject').innerHTML = `
+                <div class="text-center py-8 text-red-600">
+                    <i class="fas fa-exclamation-triangle text-3xl mb-3"></i>
+                    <p class="text-sm">Failed to load project data</p>
+                </div>
+            `;
+            document.getElementById('timeByTask').innerHTML = `
+                <div class="text-center py-8 text-red-600">
+                    <i class="fas fa-exclamation-triangle text-3xl mb-3"></i>
+                    <p class="text-sm">Failed to load task data</p>
+                </div>
+            `;
         }
     }
 
@@ -272,15 +335,15 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="flex items-center justify-between p-3 mb-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div class="flex items-center space-x-3">
                     <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                        <span class="text-xs font-medium text-white">${user.user.name.charAt(0)}</span>
+                        <span class="text-xs font-medium text-white">${user.user?.name?.charAt(0) || 'U'}</span>
                     </div>
                     <div>
-                        <div class="font-medium text-gray-900 text-sm">${user.user.name}</div>
-                        <div class="text-xs text-gray-500">${user.total_hours} hours</div>
+                        <div class="font-medium text-gray-900 text-sm">${user.user?.name || 'Unknown User'}</div>
+                        <div class="text-xs text-gray-500">${user.total_hours || 0} hours</div>
                     </div>
                 </div>
                 <div class="text-right">
-                    <div class="font-bold text-blue-600 text-sm">${user.formatted_time}</div>
+                    <div class="font-bold text-blue-600 text-sm">${user.formatted_time || '0h 0m'}</div>
                 </div>
             </div>
         `).join('');
@@ -305,12 +368,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="flex items-center space-x-3 flex-1">
                     <div class="w-2 h-8 bg-green-500 rounded-full"></div>
                     <div class="flex-1 min-w-0">
-                        <div class="font-medium text-gray-900 text-sm truncate">${project.project.name}</div>
-                        <div class="text-xs text-gray-500">${project.total_hours} hours</div>
+                        <div class="font-medium text-gray-900 text-sm truncate">${project.project?.name || 'Unknown Project'}</div>
+                        <div class="text-xs text-gray-500">${project.total_hours || 0} hours</div>
                     </div>
                 </div>
                 <div class="text-right">
-                    <div class="font-bold text-green-600 text-sm">${project.formatted_time}</div>
+                    <div class="font-bold text-green-600 text-sm">${project.formatted_time || '0h 0m'}</div>
                 </div>
             </div>
         `).join('');
@@ -332,11 +395,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         container.innerHTML = tasks.map(task => `
             <div class="p-3 mb-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                <div class="font-medium text-gray-900 text-sm mb-1 truncate">${task.task.title}</div>
-                <div class="text-xs text-gray-500 mb-2">${task.task.project?.name || 'No Project'}</div>
+                <div class="font-medium text-gray-900 text-sm mb-1 truncate">${task.task?.title || 'Unknown Task'}</div>
+                <div class="text-xs text-gray-500 mb-2">${task.task?.project?.name || 'No Project'}</div>
                 <div class="flex justify-between items-center">
-                    <span class="text-xs text-gray-600">${task.total_hours} hours</span>
-                    <span class="font-bold text-purple-600 text-sm">${task.formatted_time}</span>
+                    <span class="text-xs text-gray-600">${task.total_hours || 0} hours</span>
+                    <span class="font-bold text-purple-600 text-sm">${task.formatted_time || '0h 0m'}</span>
                 </div>
             </div>
         `).join('');
@@ -345,7 +408,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load detailed report
     async function loadDetailedReport() {
         try {
-            const response = await fetch('/admin/time-reports/detailed');
+            const response = await fetch(`/admin/time-reports/detailed?range=${currentDateRange}`);
             const data = await response.json();
 
             if (data.error) {
@@ -359,7 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('detailedReport').innerHTML = `
                 <div class="text-center py-8 text-red-600">
                     <i class="fas fa-exclamation-triangle text-3xl mb-3"></i>
-                    <p>Failed to load detailed report</p>
+                    <p>Failed to load detailed report: ${error.message}</p>
                 </div>
             `;
         }
@@ -369,7 +432,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderDetailedReport(timeLogs) {
         const container = document.getElementById('detailedReport');
 
-        if (!timeLogs || timeLogs.data.length === 0) {
+        if (!timeLogs || !timeLogs.data || timeLogs.data.length === 0) {
             container.innerHTML = `
                 <div class="text-center py-8">
                     <i class="fas fa-clock text-gray-300 text-3xl mb-3"></i>
@@ -395,22 +458,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         ${timeLogs.data.map(entry => `
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900">${entry.user_name}</div>
+                                    <div class="text-sm font-medium text-gray-900">${entry.user_name || 'Unknown User'}</div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm font-medium text-gray-900">${entry.task_name}</div>
-                                    <div class="text-sm text-gray-500">${entry.project_name}</div>
+                                    <div class="text-sm font-medium text-gray-900">${entry.task_name || 'Unknown Task'}</div>
+                                    <div class="text-sm text-gray-500">${entry.project_name || 'No Project'}</div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="text-sm text-gray-900 max-w-xs truncate">${entry.description || 'No description'}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">${entry.date}</div>
-                                    <div class="text-sm text-gray-500">${entry.start_time.split(' ')[1]}</div>
+                                    <div class="text-sm text-gray-900">${entry.date || 'Unknown Date'}</div>
+                                    <div class="text-sm text-gray-500">${entry.start_time ? entry.start_time.split(' ')[1] : ''}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-green-600">${entry.formatted_duration}</div>
-                                    <div class="text-sm text-gray-500">${entry.duration_hours} hours</div>
+                                    <div class="text-sm font-medium text-green-600">${entry.formatted_duration || '0m'}</div>
+                                    <div class="text-sm text-gray-500">${entry.duration_hours || 0} hours</div>
                                 </td>
                             </tr>
                         `).join('')}
@@ -420,11 +483,11 @@ document.addEventListener('DOMContentLoaded', function() {
             ${timeLogs.links ? `
             <div class="mt-4 flex items-center justify-between">
                 <div class="text-sm text-gray-700">
-                    Showing ${timeLogs.from} to ${timeLogs.to} of ${timeLogs.total} entries
+                    Showing ${timeLogs.from || 0} to ${timeLogs.to || 0} of ${timeLogs.total || 0} entries
                 </div>
                 <div class="flex space-x-2">
                     ${timeLogs.links.map(link => `
-                        <a href="${link.url}" class="px-3 py-1 text-sm ${link.active ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'} rounded">
+                        <a href="${link.url || '#'}" class="px-3 py-1 text-sm ${link.active ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'} rounded" onclick="event.preventDefault(); loadDetailedPage('${link.url}')">
                             ${link.label.replace('&laquo;', '«').replace('&raquo;', '»')}
                         </a>
                     `).join('')}
@@ -434,10 +497,40 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
 
+    // Load detailed page from pagination
+    window.loadDetailedPage = function(url) {
+        if (!url || url === '#' || url.includes('null')) return;
+
+        // Extract page number from URL
+        const urlParams = new URLSearchParams(url.split('?')[1]);
+        const page = urlParams.get('page') || 1;
+
+        // Reload detailed report with page
+        loadDetailedReportWithPage(page);
+    };
+
+    async function loadDetailedReportWithPage(page) {
+        try {
+            const response = await fetch(`/admin/time-reports/detailed?range=${currentDateRange}&page=${page}`);
+            const data = await response.json();
+
+            if (data.error) {
+                throw new Error(data.message);
+            }
+
+            renderDetailedReport(data.time_logs);
+
+        } catch (error) {
+            console.error('Error loading detailed report:', error);
+            showNotification('Failed to load page', 'error');
+        }
+    }
+
     // Utility functions
     function filterReports() {
         currentDateRange = document.getElementById('dateRange').value;
         loadTimeSummary();
+        loadDetailedReport();
     }
 
     function refreshAll() {
@@ -447,7 +540,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showNotification('Data refreshed successfully', 'success');
     }
 
-    async function exportReport() {
+    async function exportReport(format = 'json') {
         try {
             const response = await fetch('/admin/time-reports/export', {
                 method: 'POST',
@@ -455,13 +548,42 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
-                body: JSON.stringify({ type: 'detailed' })
+                body: JSON.stringify({
+                    type: 'detailed',
+                    range: currentDateRange,
+                    format: format
+                })
             });
 
-            const data = await response.json();
-            if (data.success) {
-                showNotification('Report exported successfully', 'success');
-                // Here you can trigger download if needed
+            if (format === 'csv') {
+                // Handle CSV download
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `time-report-${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                showNotification('CSV report downloaded successfully', 'success');
+            } else {
+                // Handle JSON download
+                const data = await response.json();
+                if (data.success) {
+                    const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `time-report-${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    showNotification('JSON report downloaded successfully', 'success');
+                } else {
+                    showNotification('Error exporting report: ' + data.error, 'error');
+                }
             }
         } catch (error) {
             showNotification('Error exporting report', 'error');
@@ -505,6 +627,10 @@ document.addEventListener('DOMContentLoaded', function() {
     transition: transform 0.2s ease-in-out;
 }
 
-
+/* Ensure Font Awesome icons display properly */
+.fas, .far, .fab {
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+}
 </style>
 @endsection

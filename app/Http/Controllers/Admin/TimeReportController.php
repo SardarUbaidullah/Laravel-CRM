@@ -32,32 +32,33 @@ class TimeReportController extends Controller
                 default => Carbon::now()->subDays(30)
             };
 
-            // Total time spent
+            // FIX 1: Prevent negative time by using ABS and ensuring positive duration
             $totalTime = TimeLog::where('is_running', false)
                 ->whereNotNull('end_time')
                 ->where('start_time', '>=', $startDate)
-                ->sum('duration_minutes');
+                ->sum(DB::raw('ABS(duration_minutes)'));
 
-            // Time by user
+            // Time by user - FIXED: Use ABS to prevent negative time
             $timeByUser = TimeLog::where('is_running', false)
                 ->whereNotNull('end_time')
                 ->with(['user' => function($query) {
                     $query->select('id', 'name', 'email');
                 }])
-                ->select('user_id', DB::raw('SUM(duration_minutes) as total_minutes'))
+                ->select('user_id', DB::raw('SUM(ABS(duration_minutes)) as total_minutes'))
                 ->where('start_time', '>=', $startDate)
                 ->groupBy('user_id')
                 ->get()
                 ->map(function($item) {
+                    $totalMinutes = abs($item->total_minutes ?? 0); // Ensure positive
                     return [
                         'user' => $item->user,
-                        'total_minutes' => $item->total_minutes,
-                        'total_hours' => round($item->total_minutes / 60, 2),
-                        'formatted_time' => $this->formatMinutes($item->total_minutes)
+                        'total_minutes' => $totalMinutes,
+                        'total_hours' => round($totalMinutes / 60, 2),
+                        'formatted_time' => $this->formatMinutes($totalMinutes)
                     ];
                 });
 
-            // Time by project
+            // Time by project - FIXED: Use ABS to prevent negative time
             $timeByProject = TimeLog::where('time_logs.is_running', false)
                 ->whereNotNull('time_logs.end_time')
                 ->join('tasks', 'time_logs.task_id', '=', 'tasks.id')
@@ -65,50 +66,52 @@ class TimeReportController extends Controller
                 ->select(
                     'projects.id as project_id',
                     'projects.name as project_name',
-                    DB::raw('SUM(time_logs.duration_minutes) as total_minutes')
+                    DB::raw('SUM(ABS(time_logs.duration_minutes)) as total_minutes')
                 )
                 ->where('time_logs.start_time', '>=', $startDate)
                 ->groupBy('projects.id', 'projects.name')
                 ->get()
                 ->map(function($item) {
+                    $totalMinutes = abs($item->total_minutes ?? 0); // Ensure positive
                     return [
                         'project' => [
                             'id' => $item->project_id,
                             'name' => $item->project_name
                         ],
-                        'total_minutes' => $item->total_minutes,
-                        'total_hours' => round($item->total_minutes / 60, 2),
-                        'formatted_time' => $this->formatMinutes($item->total_minutes)
+                        'total_minutes' => $totalMinutes,
+                        'total_hours' => round($totalMinutes / 60, 2),
+                        'formatted_time' => $this->formatMinutes($totalMinutes)
                     ];
                 });
 
-            // Time by task
+            // Time by task - FIXED: Use ABS to prevent negative time
             $timeByTask = TimeLog::where('is_running', false)
                 ->whereNotNull('end_time')
                 ->with(['task' => function($query) {
                     $query->select('id', 'title', 'project_id')->with('project:id,name');
                 }])
-                ->select('task_id', DB::raw('SUM(duration_minutes) as total_minutes'))
+                ->select('task_id', DB::raw('SUM(ABS(duration_minutes)) as total_minutes'))
                 ->where('start_time', '>=', $startDate)
                 ->groupBy('task_id')
                 ->orderBy('total_minutes', 'desc')
                 ->limit(10)
                 ->get()
                 ->map(function($item) {
+                    $totalMinutes = abs($item->total_minutes ?? 0); // Ensure positive
                     return [
                         'task' => $item->task,
-                        'total_minutes' => $item->total_minutes,
-                        'total_hours' => round($item->total_minutes / 60, 2),
-                        'formatted_time' => $this->formatMinutes($item->total_minutes)
+                        'total_minutes' => $totalMinutes,
+                        'total_hours' => round($totalMinutes / 60, 2),
+                        'formatted_time' => $this->formatMinutes($totalMinutes)
                     ];
                 });
 
-            // Daily time trends (last 14 days)
+            // Daily time trends (last 14 days) - FIXED: Use ABS
             $dailyTrends = TimeLog::where('is_running', false)
                 ->whereNotNull('end_time')
                 ->select(
                     DB::raw('DATE(start_time) as date'),
-                    DB::raw('SUM(duration_minutes) as total_minutes')
+                    DB::raw('SUM(ABS(duration_minutes)) as total_minutes')
                 )
                 ->where('start_time', '>=', Carbon::now()->subDays(14))
                 ->groupBy('date')
@@ -192,13 +195,15 @@ class TimeReportController extends Controller
                 $query->where('start_time', '<=', $request->end_date . ' 23:59:59');
             }
 
+            // FIX 2: Pagination - ensure proper pagination
             $timeLogs = $query->orderBy('start_time', 'desc')
                 ->paginate(25);
 
-            // Transform data for response
+            // Transform data for response - FIXED: Use ABS to prevent negative time
             $timeLogs->getCollection()->transform(function($timeLog) {
-                $hours = floor($timeLog->duration_minutes / 60);
-                $minutes = $timeLog->duration_minutes % 60;
+                $durationMinutes = abs($timeLog->duration_minutes); // Ensure positive duration
+                $hours = floor($durationMinutes / 60);
+                $minutes = $durationMinutes % 60;
                 $formattedDuration = $hours > 0 ? "{$hours}h {$minutes}m" : "{$minutes}m";
 
                 return [
@@ -209,8 +214,8 @@ class TimeReportController extends Controller
                     'description' => $timeLog->description,
                     'start_time' => $timeLog->start_time->format('Y-m-d H:i:s'),
                     'end_time' => $timeLog->end_time->format('Y-m-d H:i:s'),
-                    'duration_minutes' => $timeLog->duration_minutes,
-                    'duration_hours' => round($timeLog->duration_minutes / 60, 2),
+                    'duration_minutes' => $durationMinutes,
+                    'duration_hours' => round($durationMinutes / 60, 2),
                     'formatted_duration' => $formattedDuration,
                     'date' => $timeLog->start_time->format('Y-m-d')
                 ];
@@ -238,7 +243,7 @@ class TimeReportController extends Controller
         }
     }
 
-    // Project-based time report
+    // Project-based time report - FIXED: Use ABS
     public function getProjectTimeReport(Request $request)
     {
         try {
@@ -271,10 +276,12 @@ class TimeReportController extends Controller
 
             $timeLogs = $query->orderBy('start_time', 'desc')->get();
 
-            // Group by task and user for summary
+            // Group by task and user for summary - FIXED: Use ABS
             $taskSummary = $timeLogs->groupBy('task_id')->map(function($logs, $taskId) {
                 $task = $logs->first()->task;
-                $totalMinutes = $logs->sum('duration_minutes');
+                $totalMinutes = $logs->sum(function($log) {
+                    return abs($log->duration_minutes);
+                });
 
                 return [
                     'task' => $task,
@@ -287,7 +294,9 @@ class TimeReportController extends Controller
 
             $userSummary = $timeLogs->groupBy('user_id')->map(function($logs, $userId) {
                 $user = $logs->first()->user;
-                $totalMinutes = $logs->sum('duration_minutes');
+                $totalMinutes = $logs->sum(function($log) {
+                    return abs($log->duration_minutes);
+                });
 
                 return [
                     'user' => $user,
@@ -299,12 +308,19 @@ class TimeReportController extends Controller
             })->values();
 
             return response()->json([
-                'time_logs' => $timeLogs->take(50)->values(), // Limit for performance
+                'time_logs' => $timeLogs->take(50)->map(function($log) {
+                    $log->duration_minutes = abs($log->duration_minutes);
+                    return $log;
+                })->values(),
                 'task_summary' => $taskSummary,
                 'user_summary' => $userSummary,
                 'overall_stats' => [
-                    'total_time_minutes' => $timeLogs->sum('duration_minutes'),
-                    'total_time_hours' => round($timeLogs->sum('duration_minutes') / 60, 2),
+                    'total_time_minutes' => $timeLogs->sum(function($log) {
+                        return abs($log->duration_minutes);
+                    }),
+                    'total_time_hours' => round($timeLogs->sum(function($log) {
+                        return abs($log->duration_minutes);
+                    }) / 60, 2),
                     'total_tasks' => $timeLogs->unique('task_id')->count(),
                     'total_users' => $timeLogs->unique('user_id')->count(),
                     'total_entries' => $timeLogs->count()
@@ -317,7 +333,7 @@ class TimeReportController extends Controller
         }
     }
 
-    // User performance report
+    // User performance report - FIXED: Use ABS
     public function getUserPerformanceReport(Request $request)
     {
         try {
@@ -334,10 +350,12 @@ class TimeReportController extends Controller
                 ->get()
                 ->map(function($user) {
                     $timeLogs = $user->timeLogs;
-                    $totalMinutes = $timeLogs->sum('duration_minutes');
+                    $totalMinutes = $timeLogs->sum(function($log) {
+                        return abs($log->duration_minutes);
+                    });
                     $totalTasks = $timeLogs->unique('task_id')->count();
                     $totalProjects = $timeLogs->unique(function($log) {
-                        return $log->task->project_id;
+                        return $log->task->project_id ?? null;
                     })->count();
 
                     $avgTimePerTask = $totalTasks > 0 ? round($totalMinutes / $totalTasks, 2) : 0;
@@ -374,13 +392,14 @@ class TimeReportController extends Controller
         }
     }
 
-    // Export time report
+    // FIX 3: Export time report - Working export functionality
     public function exportReport(Request $request)
     {
         try {
             $type = $request->get('type', 'detailed');
-            $data = [];
+            $format = $request->get('format', 'json');
 
+            // Get the data based on type
             switch ($type) {
                 case 'summary':
                     $data = $this->getTimeSummary($request)->getData(true);
@@ -394,23 +413,92 @@ class TimeReportController extends Controller
                 case 'user_performance':
                     $data = $this->getUserPerformanceReport($request)->getData(true);
                     break;
+                default:
+                    $data = $this->getTimeSummary($request)->getData(true);
             }
 
-            return response()->json([
-                'success' => true,
-                'data' => $data,
+            // Prepare export data
+            $exportData = [
                 'type' => $type,
-                'exported_at' => now()->format('Y-m-d H:i:s')
-            ]);
+                'exported_at' => now()->format('Y-m-d H:i:s'),
+                'data' => $data
+            ];
+
+            // Return different formats
+            if ($format === 'csv') {
+                return $this->exportToCsv($exportData, $type);
+            } elseif ($format === 'json') {
+                return response()->json([
+                    'success' => true,
+                    'data' => $exportData,
+                    'type' => $type,
+                    'exported_at' => now()->format('Y-m-d H:i:s')
+                ]);
+            } else {
+                return response()->json([
+                    'success' => true,
+                    'data' => $exportData,
+                    'type' => $type,
+                    'exported_at' => now()->format('Y-m-d H:i:s')
+                ]);
+            }
 
         } catch (\Exception $e) {
             \Log::error('Export report error: ' . $e->getMessage());
-            return response()->json(['error' => 'Failed to export report'], 500);
+            return response()->json([
+                'error' => 'Failed to export report',
+                'message' => $e->getMessage()
+            ], 500);
         }
+    }
+
+    // Helper method for CSV export
+    private function exportToCsv($data, $type)
+    {
+        $filename = "time_report_{$type}_" . date('Y-m-d') . ".csv";
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+
+        $callback = function() use ($data, $type) {
+            $file = fopen('php://output', 'w');
+
+            // Add headers based on report type
+            if ($type === 'detailed' && isset($data['data']['time_logs']['data'])) {
+                fputcsv($file, ['Task', 'User', 'Project', 'Duration', 'Start Time', 'End Time', 'Date']);
+
+                foreach ($data['data']['time_logs']['data'] as $log) {
+                    fputcsv($file, [
+                        $log['task_name'],
+                        $log['user_name'],
+                        $log['project_name'],
+                        $log['formatted_duration'],
+                        $log['start_time'],
+                        $log['end_time'],
+                        $log['date']
+                    ]);
+                }
+            } elseif ($type === 'summary') {
+                fputcsv($file, ['Metric', 'Value']);
+                fputcsv($file, ['Total Time', $data['data']['summary']['formatted_total_time']]);
+                fputcsv($file, ['Tasks Tracked', $data['data']['summary']['total_tasks_tracked']]);
+                fputcsv($file, ['Team Members', $data['data']['summary']['team_members']]);
+                fputcsv($file, ['Average Daily', $data['data']['summary']['avg_daily_formatted']]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     private function formatMinutes($minutes)
     {
+        // Ensure minutes is positive
+        $minutes = abs($minutes);
+
         $hours = floor($minutes / 60);
         $mins = $minutes % 60;
 

@@ -18,23 +18,19 @@
             </a>
         </div>
 
-        <!-- Mobile Filter Tabs -->
+        <!-- Professional Mobile Filter Tabs -->
         <div class="lg:hidden mb-6">
-            <div class="flex space-x-1 bg-white p-1 rounded-xl shadow-sm border border-gray-200">
-                <button onclick="showColumn('super_admin')"
-                        class="flex-1 px-3 py-2 text-xs font-medium rounded-lg bg-purple-100 text-purple-800">
+            <div class="flex space-x-1 bg-white p-1 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+                <button data-role="super_admin" class="filter-tab active flex-1 px-4 py-3 text-sm font-medium rounded-lg bg-purple-100 text-purple-800 whitespace-nowrap transition-all duration-200">
                     Super Admins ({{ $users->where('role', 'super_admin')->count() }})
                 </button>
-                <button onclick="showColumn('admin')"
-                        class="flex-1 px-3 py-2 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100">
+                <button data-role="admin" class="filter-tab flex-1 px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-100 whitespace-nowrap transition-all duration-200">
                     Managers ({{ $users->where('role', 'admin')->count() }})
                 </button>
-                <button onclick="showColumn('user')"
-                        class="flex-1 px-3 py-2 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100">
+                <button data-role="user" class="filter-tab flex-1 px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-100 whitespace-nowrap transition-all duration-200">
                     Team ({{ $users->where('role', 'user')->count() }})
                 </button>
-                <button onclick="showColumn('client')"
-                        class="flex-1 px-3 py-2 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100">
+                <button data-role="client" class="filter-tab flex-1 px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-100 whitespace-nowrap transition-all duration-200">
                     Clients ({{ $users->where('role', 'client')->count() }})
                 </button>
             </div>
@@ -43,7 +39,7 @@
         <!-- Kanban Board -->
         <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-8">
             <!-- Super Admins Column -->
-            <div id="super_admin-column" class="mobile-column bg-gray-50 rounded-2xl p-4 sm:p-6">
+            <div class="user-column active bg-gray-50 rounded-2xl p-4 sm:p-6" data-role="super_admin">
                 <div class="flex items-center justify-between mb-4 sm:mb-6">
                     <h3 class="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
                         <div class="w-2 h-2 sm:w-3 sm:h-3 bg-purple-500 rounded-full mr-2 sm:mr-3"></div>
@@ -89,7 +85,6 @@
                                 @endif
                             </div>
                             <div class="flex space-x-1 sm:space-x-2">
-                                <!-- Show Button -->
                                 <a href="{{ route('users.show', $user) }}"
                                    class="text-green-600 hover:text-green-800 p-1 sm:p-2 rounded-lg hover:bg-green-50 transition-colors"
                                    title="View User">
@@ -98,7 +93,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                                     </svg>
                                 </a>
-                                <!-- Edit Button -->
                                 <a href="{{ route('users.edit', $user) }}"
                                    class="text-blue-600 hover:text-blue-800 p-1 sm:p-2 rounded-lg hover:bg-blue-50 transition-colors"
                                    title="Edit User">
@@ -106,7 +100,6 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
                                 </a>
-                                <!-- Delete Button -->
                                 <form action="{{ route('users.destroy', $user) }}" method="POST" class="inline">
                                     @csrf
                                     @method('DELETE')
@@ -127,7 +120,7 @@
             </div>
 
             <!-- Managers Column -->
-            <div id="admin-column" class="mobile-column lg:block bg-gray-50 rounded-2xl p-4 sm:p-6">
+            <div class="user-column bg-gray-50 rounded-2xl p-4 sm:p-6" data-role="admin">
                 <div class="flex items-center justify-between mb-4 sm:mb-6">
                     <h3 class="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
                         <div class="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full mr-2 sm:mr-3"></div>
@@ -208,7 +201,7 @@
             </div>
 
             <!-- Team Members Column -->
-            <div id="user-column" class="mobile-column lg:block bg-gray-50 rounded-2xl p-4 sm:p-6">
+            <div class="user-column bg-gray-50 rounded-2xl p-4 sm:p-6" data-role="user">
                 <div class="flex items-center justify-between mb-4 sm:mb-6">
                     <h3 class="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
                         <div class="w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full mr-2 sm:mr-3"></div>
@@ -289,7 +282,7 @@
             </div>
 
             <!-- Clients Column -->
-            <div id="client-column" class="mobile-column lg:block bg-gray-50 rounded-2xl p-4 sm:p-6">
+            <div class="user-column bg-gray-50 rounded-2xl p-4 sm:p-6" data-role="client">
                 <div class="flex items-center justify-between mb-4 sm:mb-6">
                     <h3 class="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
                         <div class="w-2 h-2 sm:w-3 sm:h-3 bg-orange-500 rounded-full mr-2 sm:mr-3"></div>
@@ -392,48 +385,81 @@
 </div>
 
 <script>
-// Mobile column switching
-function showColumn(column) {
-    // Hide all columns
-    document.querySelectorAll('.mobile-column').forEach(col => {
-        col.classList.add('hidden');
-    });
-
-    // Show selected column
-    document.getElementById(column + '-column').classList.remove('hidden');
-
-    // Update active tab
-    document.querySelectorAll('[onclick^="showColumn"]').forEach(btn => {
-        btn.classList.remove('bg-purple-100', 'text-purple-800');
-        btn.classList.add('text-gray-600', 'hover:bg-gray-100');
-    });
-
-    // Set active tab
-    event.target.classList.remove('text-gray-600', 'hover:bg-gray-100');
-    event.target.classList.add('bg-purple-100', 'text-purple-800');
-}
-
-// Initialize - show first column on mobile
+// Professional filter - clean and working
 document.addEventListener('DOMContentLoaded', function() {
-    if (window.innerWidth < 1024) {
-        showColumn('super_admin');
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    const userColumns = document.querySelectorAll('.user-column');
+
+    // Initialize mobile view
+    function initMobileView() {
+        if (window.innerWidth < 1024) {
+            userColumns.forEach((col, index) => {
+                if (index === 0) {
+                    col.style.display = 'block';
+                } else {
+                    col.style.display = 'none';
+                }
+            });
+        } else {
+            userColumns.forEach(col => {
+                col.style.display = 'block';
+            });
+        }
     }
+
+    // Filter tab click handler
+    filterTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const role = this.getAttribute('data-role');
+
+            // Update active tab
+            filterTabs.forEach(t => {
+                t.classList.remove('active', 'bg-purple-100', 'text-purple-800');
+                t.classList.add('text-gray-600', 'hover:bg-gray-100');
+            });
+            this.classList.remove('text-gray-600', 'hover:bg-gray-100');
+            this.classList.add('active', 'bg-purple-100', 'text-purple-800');
+
+            // Show selected column, hide others on mobile
+            if (window.innerWidth < 1024) {
+                userColumns.forEach(col => {
+                    if (col.getAttribute('data-role') === role) {
+                        col.style.display = 'block';
+                    } else {
+                        col.style.display = 'none';
+                    }
+                });
+            }
+        });
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', function() {
+        initMobileView();
+    });
+
+    // Initial setup
+    initMobileView();
 });
 </script>
 
 <style>
 @media (max-width: 1023px) {
-    .mobile-column {
+    .user-column {
         display: none;
     }
-    .mobile-column:first-child {
+    .user-column:first-child {
         display: block;
     }
 }
 
-/* Smooth transitions */
-.hover\:shadow-md {
-    transition: box-shadow 0.2s ease-in-out;
+.filter-tab.active {
+    background-color: rgb(243, 232, 255);
+    color: rgb(107, 33, 168);
+}
+
+.filter-tab {
+    transition: all 0.2s ease-in-out;
 }
 </style>
 @endsection

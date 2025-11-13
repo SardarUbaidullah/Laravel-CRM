@@ -273,7 +273,7 @@
                 <p class="text-xs text-gray-500 mt-1">Communicate</p>
             </a>
 
-            <a href="{{ route('team.profile') }}" class="group p-4 bg-white border border-gray-200/60 rounded-xl text-center hover:border-orange-300 hover:shadow-md transition-all duration-200">
+            <a href="{{ route('profile.edit') }}" class="group p-4 bg-white border border-gray-200/60 rounded-xl text-center hover:border-orange-300 hover:shadow-md transition-all duration-200">
                 <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-2 group-hover:bg-orange-500 transition-colors">
                     <i class="fas fa-user text-orange-600 group-hover:text-white"></i>
                 </div>
