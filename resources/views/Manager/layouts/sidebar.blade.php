@@ -14,7 +14,6 @@
                     <span class="text-gray-500 text-sm">Panel</span>
                 </div>
             </div>
-
             <!-- Menu -->
             <nav class="space-y-2">
 

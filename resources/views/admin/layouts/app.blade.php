@@ -8,14 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<<<<<<< HEAD
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-=======
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
->>>>>>> dev
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -333,7 +329,6 @@
                     <div class="w-px h-6 bg-border mx-2"></div>
 
                     <!-- Profile -->
-<<<<<<< HEAD
                 <!-- Profile Dropdown -->
                 @auth
 <div class="relative" x-data="{ open: false }">
@@ -362,31 +357,6 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
         </svg>
     </button>
-=======
-                    <!-- Profile Dropdown -->
-                    @auth
-                        <div class="relative" x-data="{ open: false }">
-                            <button @click="open = !open"
-                                class="flex items-center space-x-3 focus:outline-none hover:bg-gray-50 rounded-lg p-2 transition-colors duration-200">
-                                <img class="w-8 h-8 rounded-full object-cover"
-                                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face"
-                                    alt="User Avatar" />
-                                <div class="text-left">
-                                    <p class="text-sm font-medium text-card-foreground">
-                                        {{ Auth::user()->name }}
-                                    </p>
-                                    <p class="text-xs text-muted-foreground capitalize">
-                                        super admin
-                                    </p>
-                                </div>
-                                <svg class="w-4 h-4 text-gray-500 transition-transform duration-200"
-                                    :class="{ 'rotate-180': open }" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </button>
->>>>>>> dev
 
                             <!-- Dropdown Menu -->
                             <div x-show="open" @click.away="open = false"
@@ -505,25 +475,10 @@
         </div>
     </div>
 
-<<<<<<< HEAD
  <script>
 
-        const systemMetrics = {
-            serverLoad: 45,
-            memoryUsage: 68,
-            storageUsed: 2.4,
-            storageTotal: 10,
-            activeSessions: 247,
-            apiCalls: 12400,
-            uptime: 99.9,
-            responseTime: 128,
-            errorRate: 0.2
-        };
+   
 
-=======
-    <script>
-       
->>>>>>> dev
         // DOM Elements
         const tabButtons = document.querySelectorAll('.tab-btn');
         const tabContents = document.querySelectorAll('.tab-content');

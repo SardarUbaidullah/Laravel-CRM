@@ -199,7 +199,6 @@
                         <div
                             class="w-10 h-10 rounded-xl flex items-center justify-center
         {{ request()->is('team/calendar*') ? 'bg-indigo-500 text-white' : 'bg-slate-100 text-slate-600' }}">
-<<<<<<< HEAD
         <i class="fas fa-calendar"></i>
     </div>
     <span>Calendar</span>
@@ -214,21 +213,6 @@
                        'text-slate-600 hover:bg-white hover:shadow-md hover:border hover:border-slate-200' }}">
                         <div class="w-10 h-10 rounded-xl flex items-center justify-center
                             {{ request()->is('profile*') ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600' }}">
-=======
-                            <i class="fas fa-calendar"></i>
-                        </div>
-                        <span>Calendar</span>
-                    </a>
-                    <!-- Profile -->
-                    <a href="{{ route('team.profile') }}"
-                        class="nav-item flex items-center space-x-4 px-4 py-4 rounded-2xl text-sm font-semibold transition-all duration-300
-                       {{ request()->is('team/profile*')
-                           ? 'bg-amber-500/10 text-amber-600 border border-amber-200 shadow-sm'
-                           : 'text-slate-600 hover:bg-white hover:shadow-md hover:border hover:border-slate-200' }}">
-                        <div
-                            class="w-10 h-10 rounded-xl flex items-center justify-center
-                            {{ request()->is('team/profile*') ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-600' }}">
->>>>>>> dev
                             <i class="fas fa-user"></i>
                         </div>
                         <span>Profile</span>
@@ -267,17 +251,9 @@
                     class="flex items-center space-x-3 p-3 rounded-2xl bg-white/80 border border-slate-200/60 shadow-sm hover:shadow-md transition-all duration-300">
                     <div class="relative">
                         <img class="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-md"
-<<<<<<< HEAD
                              src="{{ Auth::user()->profile_photo_url }}"
                              alt="{{ auth()->user()->name }}">
                         <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white"></div>
-=======
-                            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&h=120&fit=crop&crop=face"
-                            alt="{{ auth()->user()->name }}">
-                        <div
-                            class="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white">
-                        </div>
->>>>>>> dev
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-semibold text-slate-800 truncate">{{ auth()->user()->name }}</p>
@@ -421,7 +397,7 @@
                         <span>Calendar</span>
                     </a>
                     <!-- Profile -->
-                    <a href="{{ route('team.profile') }}"
+                    <a href="{{ route('profile.edit') }}"
                         class="nav-item flex items-center space-x-4 px-4 py-4 rounded-2xl text-sm font-semibold transition-all duration-300
                        {{ request()->is('team/profile*')
                            ? 'bg-amber-500/10 text-amber-600 border border-amber-200 shadow-sm'

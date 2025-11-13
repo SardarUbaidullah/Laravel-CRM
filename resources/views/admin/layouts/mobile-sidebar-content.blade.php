@@ -267,5 +267,19 @@
                 16
             </span>
         </a>
+
+        <a href="{{ route('admin.reports') }}"
+   class="flex items-center space-x-4 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 group relative overflow-hidden text-sidebar-foreground hover:bg-sidebar-accent/80 hover:text-sidebar-foreground {{ request()->routeIs('admin.reports*') ? 'bg-sidebar-accent text-sidebar-foreground' : '' }}">
+
+    <div class="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 {{ request()->routeIs('admin.reports*') ? 'bg-primary/20 text-primary' : 'bg-sidebar-accent text-muted-foreground' }} group-hover:text-sidebar-foreground group-hover:bg-primary/10">
+        <i class="fas fa-chart-bar text-sm"></i>
+    </div>
+
+    <span class="flex-1">Analytics</span>
+
+    <span class="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-sm">
+        Stats
+    </span>
+</a>
     </nav>
 </div>
