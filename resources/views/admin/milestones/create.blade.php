@@ -4,6 +4,12 @@
         'admin' => 'Manager.layouts.app',
         'user' => 'team.app',
     };
+
+    // Define routes based on role
+    $isSuperAdmin = Auth::user()->role === 'super_admin';
+    $milestoneStoreRoute = $isSuperAdmin ? route('milestones.store') : route('manager.milestones.store');
+    $projectsIndexRoute = $isSuperAdmin ? route('projects.index') : route('manager.projects.index');
+    $projectShowRoute = $isSuperAdmin ? route('projects.show', ':id') : route('manager.projects.show', ':id');
 @endphp
 
 @extends($layout)
@@ -16,10 +22,18 @@
             <div class="mb-4 md:mb-0">
                 <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Create New Milestone</h1>
                 <p class="text-gray-600 mt-2 text-sm sm:text-base">Add a new milestone to track project progress</p>
+                @if($isSuperAdmin)
+                <span class="inline-flex items-center px-2 py-1 mt-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
+                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"/>
+                    </svg>
+                    Super Admin View
+                </span>
+                @endif
             </div>
             @php
                 $projectId = request('project_id', old('project_id'));
-                $backUrl = $projectId ? route('manager.projects.show', $projectId) : route('manager.projects.index');
+                $backUrl = $projectId ? str_replace(':id', $projectId, $projectShowRoute) : $projectsIndexRoute;
             @endphp
             <a href="{{ $backUrl }}"
                class="bg-gray-600 hover:bg-gray-700 text-white px-4 sm:px-6 py-3 rounded-lg font-medium transition duration-200 flex items-center justify-center md:justify-start w-full md:w-auto text-sm sm:text-base">
@@ -44,8 +58,13 @@
 
             <!-- Form -->
             <div class="p-4 sm:p-6">
-                <form action="{{ route('manager.milestones.store') }}" method="POST" class="space-y-6">
+                <form action="{{ $milestoneStoreRoute }}" method="POST" class="space-y-6">
                     @csrf
+
+                    <!-- Hidden field for redirect -->
+                    @if(request('project_id'))
+                        <input type="hidden" name="redirect_to_project" value="1">
+                    @endif
 
                     <!-- Project Selection (Auto-selected if coming from project page) -->
                     <div>
@@ -65,6 +84,9 @@
                                     {{ $project->name }}
                                     @if($project->due_date)
                                         (Due: {{ \Carbon\Carbon::parse($project->due_date)->format('M d, Y') }})
+                                    @endif
+                                    @if($isSuperAdmin && $project->manager)
+                                        - {{ $project->manager->name }}
                                     @endif
                                 </option>
                             @endforeach

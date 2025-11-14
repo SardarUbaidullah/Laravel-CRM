@@ -1,5 +1,12 @@
-@extends("Manager.layouts.app")
 
+@php
+    $layout = match(Auth::user()->role) {
+        'super_admin' => 'admin.layouts.app',
+        'admin' => 'Manager.layouts.app',
+        'user' => 'team.app',
+    };
+@endphp
+@extends($layout)
 @section("content")
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-6xl mx-auto px-4">

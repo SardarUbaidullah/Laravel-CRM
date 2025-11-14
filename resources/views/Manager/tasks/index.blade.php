@@ -1,5 +1,12 @@
-@extends("Manager.layouts.app")
 
+@php
+    $layout = match(Auth::user()->role) {
+        'super_admin' => 'admin.layouts.app',
+        'admin' => 'Manager.layouts.app',
+        'user' => 'team.app',
+    };
+@endphp
+@extends($layout)
 @section("content")
 <div class="h-screen flex flex-col bg-gradient-to-br from-green-50 to-emerald-50/30">
     <!-- Header Section -->

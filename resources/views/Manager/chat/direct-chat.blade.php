@@ -66,17 +66,7 @@
                     </div>
                 </div>
             </div>
-            <div class="flex items-center space-x-3">
-                <button class="w-10 h-10 bg-white border border-gray-300 rounded-xl flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors duration-200">
-                    <i class="fas fa-phone-alt"></i>
-                </button>
-                <button class="w-10 h-10 bg-white border border-gray-300 rounded-xl flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors duration-200">
-                    <i class="fas fa-video"></i>
-                </button>
-                <button class="w-10 h-10 bg-white border border-gray-300 rounded-xl flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors duration-200">
-                    <i class="fas fa-ellipsis-v"></i>
-                </button>
-            </div>
+
         </div>
 
         <!-- Connection Status Indicator -->
@@ -156,10 +146,10 @@
                             required
                         ></textarea>
                     </div>
-                    <div class="flex space-x-2">
+                    <div class="flex space-x-2 " >
                         <label for="attachment" class="cursor-pointer">
-                            <input type="file" id="attachment" name="attachment" class="hidden">
-                            <span class="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center text-gray-600 transition-colors duration-200">
+                            <input type="file" id="attachment" name="attachment" class="hidden" >
+                            <span class="w-12 h-12 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center justify-center text-gray-600 transition-colors duration-200" style="display: none;">
                                 <i class="fas fa-paperclip"></i>
                             </span>
                         </label>

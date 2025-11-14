@@ -136,70 +136,75 @@ class ChatController extends Controller
     }
 
     public function directChat(User $user)
-    {
-        $currentUser = auth()->user();
+{
+    $currentUser = auth()->user();
 
-        // Enhanced role-based access control for direct messaging
-        if ($currentUser->role === 'user') {
-            // Team members can only message their managers and super_admin
-            $canMessage = false;
+    // Enhanced role-based access control for direct messaging
+    if ($currentUser->role === 'user') {
+        // Team members can only message their managers and super_admin
+        $canMessage = false;
 
-            // Check if target user is super_admin
-            if ($user->role === 'super_admin') {
-                $canMessage = true;
-            }
-            // Check if target user is manager of any project where current user is team member
-            elseif ($user->role === 'admin') {
-                $canMessage = $user->managedProjects()
-                    ->whereHas('teamMembers', function($query) use ($currentUser) {
-                        $query->where('user_id', $currentUser->id);
-                    })
-                    ->exists();
-            }
-
-            if (!$canMessage) {
-                abort(403, 'You can only message your project managers and super administrators.');
-            }
-        } else {
-            // Original logic for admin/super_admin
-            if (!$currentUser->canMessage($user)) {
-                abort(403);
-            }
+        // Check if target user is super_admin
+        if ($user->role === 'super_admin') {
+            $canMessage = true;
+        }
+        // Check if target user is manager of any project where current user is team member
+        elseif ($user->role === 'admin') {
+            $canMessage = $user->managedProjects()
+                ->whereHas('teamMembers', function($query) use ($currentUser) {
+                    $query->where('user_id', $currentUser->id);
+                })
+                ->exists();
         }
 
-        // Find or create direct chat room
-        $chatRoom = ChatRoom::where('type', 'direct')
-            ->whereHas('participants', function($query) use ($currentUser, $user) {
-                $query->where('user_id', $currentUser->id);
-            })
-            ->whereHas('participants', function($query) use ($currentUser, $user) {
-                $query->where('user_id', $user->id);
-            })
-            ->first();
-
-        if (!$chatRoom) {
-            $chatRoom = ChatRoom::create([
-                'name' => 'Direct Chat',
-                'type' => 'direct',
-                'created_by' => $currentUser->id
-            ]);
-
-            $chatRoom->participants()->createMany([
-                ['user_id' => $currentUser->id],
-                ['user_id' => $user->id]
-            ]);
+        if (!$canMessage) {
+            abort(403, 'You can only message your project managers and super administrators.');
         }
-
-        $messages = $chatRoom->messages()
-            ->with('user')
-            ->orderBy('created_at', 'asc')
-            ->paginate(50);
-
-        $this->markMessagesAsRead($chatRoom, $currentUser);
-
-        return view('manager.chat.direct-chat', compact('user', 'chatRoom', 'messages'));
+    }
+    // FIX: Allow anyone to message super_admin
+    elseif ($user->role === 'super_admin') {
+        // Anyone can message super_admin
+        $canMessage = true;
+    }
+    else {
+        // Original logic for other cases
+        if (!$currentUser->canMessage($user)) {
+            abort(403);
+        }
     }
 
+    // Rest of the code remains the same...
+    $chatRoom = ChatRoom::where('type', 'direct')
+        ->whereHas('participants', function($query) use ($currentUser, $user) {
+            $query->where('user_id', $currentUser->id);
+        })
+        ->whereHas('participants', function($query) use ($currentUser, $user) {
+            $query->where('user_id', $user->id);
+        })
+        ->first();
+
+    if (!$chatRoom) {
+        $chatRoom = ChatRoom::create([
+            'name' => 'Direct Chat',
+            'type' => 'direct',
+            'created_by' => $currentUser->id
+        ]);
+
+        $chatRoom->participants()->createMany([
+            ['user_id' => $currentUser->id],
+            ['user_id' => $user->id]
+        ]);
+    }
+
+    $messages = $chatRoom->messages()
+        ->with('user')
+        ->orderBy('created_at', 'asc')
+        ->paginate(50);
+
+    $this->markMessagesAsRead($chatRoom, $currentUser);
+
+    return view('manager.chat.direct-chat', compact('user', 'chatRoom', 'messages'));
+}
     public function sendMessage(Request $request, ChatRoom $chatRoom)
     {
         $request->validate([

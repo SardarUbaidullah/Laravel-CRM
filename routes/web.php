@@ -109,6 +109,9 @@ Route::prefix('team')->name('team.')->group(function () {
         Route::get('/{chatRoom}/messages', [ChatController::class, 'getMessages'])->name('messages');
     });
 });
+
+Route::resource('milestones', MilestoneController::class);
+
 // Pusher Authentication Route
 Route::post('/pusher/auth', function (Request $request) {
     $user = auth()->user();
@@ -176,7 +179,13 @@ Route::post('/files/{id}/access', [FileController::class, 'updateAccess'])->name
 Route::middleware(['auth', 'super_admin'])->group(function () {
 
     // Profile
-
+// Super Admin Task Routes
+Route::get('/tasks/pending', [TaskController::class, 'pendingTasks'])->name('tasks.pending');
+Route::get('/tasks/completed', [TaskController::class, 'completedTasks'])->name('tasks.completed');
+Route::post('/tasks/{id}/complete', [TaskController::class, 'markAsComplete'])->name('tasks.complete');
+Route::post('/tasks/{id}/in-progress', [TaskController::class, 'markAsInProgress'])->name('tasks.in-progress');
+Route::get('/projects/{projectId}/milestones', [TaskController::class, 'getMilestones'])->name('tasks.milestones');
+Route::post('/tasks/{id}/update-status', [TaskController::class, 'updateStatus'])->name('tasks.update-status');
     // Projects
     Route::resource('projects', ProjectController::class);
 

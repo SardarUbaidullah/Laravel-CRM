@@ -1,3 +1,4 @@
+
 @php
     $layout = match(Auth::user()->role) {
         'super_admin' => 'admin.layouts.app',
@@ -5,343 +6,478 @@
         'user' => 'team.app',
     };
 @endphp
-
 @extends($layout)
 
 @section('content')
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                        }
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: {
+                    primary: {
+                        50: '#f0f9ff',
+                        100: '#e0f2fe',
+                        500: '#0ea5e9',
+                        600: '#0284c7',
+                        700: '#0369a1',
                     }
                 }
             }
         }
-    </script>
+    }
 
-    <div class="min-h-screen bg-gray-50 py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <!-- Header -->
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-                <div class="mb-4 md:mb-0">
-                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Messages</h1>
-                    @auth
-                        @if (Auth::user()->role=='super_admin')
-                            <p class="text-gray-600 mt-2 flex items-center text-sm sm:text-base">
-                                <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                                Communicate with your team and clients
-                            </p>
-                        @endif
-                    @endauth
+    // Real-time notification functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize real-time notifications
+        initializeNotifications();
+
+        // Set up periodic checks for new messages
+        setInterval(checkForNewMessages, 10000); // Check every 10 seconds
+
+        // Mark messages as read when viewing a chat
+        document.querySelectorAll('.chat-room-link').forEach(link => {
+            link.addEventListener('click', function() {
+                const roomId = this.dataset.roomId;
+                if (roomId) {
+                    markMessagesAsRead(roomId);
+                }
+            });
+        });
+    });
+
+    function initializeNotifications() {
+        // Set up WebSocket or polling for real-time notifications
+        if (typeof Echo !== 'undefined') {
+            // Laravel Echo setup for real-time
+            Echo.private(`user.${authUserId}`)
+                .listen('NewMessageNotification', (e) => {
+                    displayNewNotification(e.message);
+                    updateUnreadCounts();
+                });
+        }
+    }
+
+    function checkForNewMessages() {
+        // AJAX call to check for new messages
+        fetch('/api/chat/unread-counts')
+            .then(response => response.json())
+            .then(data => {
+                updateUnreadCounts(data);
+            });
+    }
+
+    function displayNewNotification(message) {
+        // Create and display new notification at the top
+        const notificationContainer = document.getElementById('notification-container');
+        const notification = createNotificationElement(message);
+
+        // Insert at top
+        if (notificationContainer.firstChild) {
+            notificationContainer.insertBefore(notification, notificationContainer.firstChild);
+        } else {
+            notificationContainer.appendChild(notification);
+        }
+
+        // Show toast notification
+        showToastNotification(message);
+    }
+
+    function createNotificationElement(message) {
+        const element = document.createElement('div');
+        element.className = 'notification-item bg-white border-l-4 border-blue-500 p-4 mb-3 rounded-lg shadow-sm';
+        element.innerHTML = `
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span class="text-blue-600 font-semibold">${message.user_initials}</span>
+                    </div>
                 </div>
-                <div class="flex space-x-3">
-                    <a href="{{ route('manager.projects.index') }}"
-                       class="group bg-white border border-gray-300 text-gray-700 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-700 px-4 sm:px-5 py-2.5 rounded-xl font-medium transition-all duration-200 flex items-center shadow-sm hover:shadow-md text-sm sm:text-base">
-                        <i class="fas fa-arrow-left mr-2 group-hover:scale-110 transition-transform"></i>
-                        Back to Projects
-                    </a>
+                <div class="ml-3 flex-1">
+                    <p class="text-sm font-medium text-gray-900">${message.user_name}</p>
+                    <p class="text-sm text-gray-500 truncate">${message.content}</p>
+                    <p class="text-xs text-gray-400 mt-1">Just now</p>
                 </div>
             </div>
+        `;
+        return element;
+    }
 
-            <!-- Chat Dashboard -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-                <!-- Project Chats Section -->
-                <div class="bg-white rounded-2xl border border-gray-200/60 shadow-sm overflow-hidden">
-                    <div class="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200/60 bg-gradient-to-r from-primary-600 to-blue-700">
-                        <h2 class="text-base sm:text-lg font-semibold text-white flex items-center">
-                            <i class="fas fa-users mr-2 sm:mr-3 text-sm sm:text-lg"></i>
-                            My Project Chats
-                            <span class="ml-2 bg-white/20 px-2 py-1 rounded-full text-xs font-medium">
-                                {{ $projectRooms->count() }} projects
-                            </span>
-                        </h2>
-                    </div>
-                    <div class="p-4 sm:p-6 h-[400px] sm:h-[500px] overflow-y-auto custom-scrollbar">
-                        @forelse($projectRooms as $room)
-                        <div class="group mb-3 sm:mb-4 last:mb-0">
-                            <a href="{{ route('manager.chat.project', $room->project) }}"
-                               class="block bg-white border border-gray-200/60 rounded-xl p-3 sm:p-4 hover:border-primary-300 hover:shadow-lg transition-all duration-200 group-hover:scale-[1.02]">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex items-start space-x-3 sm:space-x-4 flex-1 min-w-0">
-                                        <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg flex-shrink-0">
-                                            <i class="fas fa-project-diagram text-sm sm:text-lg"></i>
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <h4 class="text-sm sm:text-base font-semibold text-gray-900 group-hover:text-primary-700 transition-colors mb-1 truncate">
-                                                {{ $room->project->name }}
-                                            </h4>
-                                            <p class="text-xs sm:text-sm text-gray-500 mb-2">Project Discussion</p>
-
-                                            @if($room->messages->count() > 0)
-                                            <div class="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100">
-                                                <div class="flex items-center space-x-2">
-                                                    <div class="w-5 h-5 sm:w-6 sm:h-6 bg-primary-100 rounded-full flex items-center justify-center text-primary-700 text-xs font-bold flex-shrink-0">
-                                                        {{ strtoupper(substr($room->messages->first()->user->name, 0, 1)) }}
-                                                    </div>
-                                                    <p class="text-xs sm:text-sm text-gray-600 truncate flex-1">
-                                                        <span class="font-medium text-gray-900">{{ $room->messages->first()->user->name }}</span>:
-                                                        {{ Str::limit($room->messages->first()->message, 25) }}
-                                                    </p>
-                                                </div>
-                                                <p class="text-xs text-gray-400 mt-1">
-                                                    {{ $room->messages->first()->created_at->diffForHumans() }}
-                                                </p>
-                                            </div>
-                                            @else
-                                            <div class="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100">
-                                                <p class="text-xs sm:text-sm text-gray-400 italic">No messages yet</p>
-                                            </div>
-                                            @endif
-                                        </div>
-                                    </div>
-
-                                    <!-- Unread Badge -->
-                                    @if($room->unreadMessagesCount(auth()->id()) > 0)
-                                    <div class="flex flex-col items-end space-y-2 flex-shrink-0 ml-2 sm:ml-4">
-                                        <span class="bg-red-500 text-white text-xs font-bold w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center animate-pulse">
-                                            {{ $room->unreadMessagesCount(auth()->id()) }}
-                                        </span>
-                                    </div>
-                                    @endif
-                                </div>
-                            </a>
-                        </div>
-                        @empty
-                        <div class="text-center py-6 sm:py-8 h-full flex flex-col justify-center">
-                            <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                                <i class="fas fa-users text-gray-400 text-lg sm:text-2xl"></i>
-                            </div>
-                            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">No Project Chats</h3>
-                            <p class="text-gray-500 text-xs sm:text-sm mb-3 sm:mb-4">
-                                @if(auth()->user()->role === 'admin')
-                                You don't have any projects assigned as manager yet.
-                                @else
-                                No project chats available.
-                                @endif
-                            </p>
-                            <a href="{{ route('manager.projects.index') }}"
-                               class="inline-flex items-center px-3 sm:px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs sm:text-sm font-medium transition-colors mx-auto">
-                                <i class="fas fa-plus mr-2"></i>
-                                Create Project
-                            </a>
-                        </div>
-                        @endforelse
+    function showToastNotification(message) {
+        // Create toast notification
+        const toast = document.createElement('div');
+        toast.className = 'fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-sm z-50 transform transition-transform duration-300 translate-x-full';
+        toast.innerHTML = `
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span class="text-blue-600 text-xs font-semibold">${message.user_initials}</span>
                     </div>
                 </div>
-
-                <!-- Direct Messages Section -->
-                <div class="bg-white rounded-2xl border border-gray-200/60 shadow-sm overflow-hidden">
-                    <div class="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200/60 bg-gradient-to-r from-green-600 to-emerald-700">
-                        <h2 class="text-base sm:text-lg font-semibold text-white flex items-center">
-                            <i class="fas fa-comment-dots mr-2 sm:mr-3 text-sm sm:text-lg"></i>
-                            Direct Messages
-                            <span class="ml-2 bg-white/20 px-2 py-1 rounded-full text-xs font-medium">
-                                {{ $directRooms->count() }} chats
-                            </span>
-                        </h2>
-                    </div>
-                    <div class="p-4 sm:p-6 h-[400px] sm:h-[500px] overflow-y-auto custom-scrollbar">
-                        @forelse($directRooms as $room)
-                        @php
-                            $otherUser = $room->participants->where('user_id', '!=', auth()->id())->first()->user;
-                        @endphp
-                        <div class="group mb-3 sm:mb-4 last:mb-0">
-                            <a href="{{ route('manager.chat.direct', $otherUser) }}"
-                               class="block bg-white border border-gray-200/60 rounded-xl p-3 sm:p-4 hover:border-green-300 hover:shadow-lg transition-all duration-200 group-hover:scale-[1.02]">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex items-start space-x-3 sm:space-x-4 flex-1 min-w-0">
-                                        <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white shadow-lg flex-shrink-0">
-                                            <span class="font-semibold text-sm sm:text-lg">{{ strtoupper(substr($otherUser->name, 0, 1)) }}</span>
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-center space-x-2 mb-1 flex-wrap">
-                                                <h4 class="text-sm sm:text-base font-semibold text-gray-900 group-hover:text-green-700 transition-colors truncate">
-                                                    {{ $otherUser->name }}
-                                                </h4>
-                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 flex-shrink-0">
-                                                    {{ ucfirst($otherUser->role) }}
-                                                </span>
-                                            </div>
-
-                                            @if($room->messages->count() > 0)
-                                            <div class="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100">
-                                                <p class="text-xs sm:text-sm text-gray-600 truncate">
-                                                    {{ Str::limit($room->messages->first()->message, 30) }}
-                                                </p>
-                                                <p class="text-xs text-gray-400 mt-1">
-                                                    {{ $room->messages->first()->created_at->diffForHumans() }}
-                                                </p>
-                                            </div>
-                                            @else
-                                            <div class="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100">
-                                                <p class="text-xs sm:text-sm text-gray-400 italic">No messages yet</p>
-                                            </div>
-                                            @endif
-                                        </div>
-                                    </div>
-
-                                    <!-- Unread Badge -->
-                                    @if($room->unreadMessagesCount(auth()->id()) > 0)
-                                    <div class="flex flex-col items-end space-y-2 flex-shrink-0 ml-2 sm:ml-4">
-                                        <span class="bg-red-500 text-white text-xs font-bold w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center animate-pulse">
-                                            {{ $room->unreadMessagesCount(auth()->id()) }}
-                                        </span>
-                                    </div>
-                                    @endif
-                                </div>
-                            </a>
-                        </div>
-                        @empty
-                        <div class="text-center py-6 sm:py-8 h-full flex flex-col justify-center">
-                            <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                                <i class="fas fa-comment text-gray-400 text-lg sm:text-2xl"></i>
-                            </div>
-                            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">No Direct Messages</h3>
-                            <p class="text-gray-500 text-xs sm:text-sm">Start a conversation with team members</p>
-                        </div>
-                        @endforelse
-                    </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-900">${message.user_name}</p>
+                    <p class="text-sm text-gray-500">${message.content}</p>
                 </div>
+                <button type="button" class="ml-auto flex-shrink-0 text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">Close</span>
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        `;
 
-                <!-- Start New Chat Section -->
-                <div class="bg-white rounded-2xl border border-gray-200/60 shadow-sm overflow-hidden">
-                    <div class="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200/60 bg-gradient-to-r from-orange-600 to-amber-700">
-                        <h2 class="text-base sm:text-lg font-semibold text-white flex items-center">
-                            <i class="fas fa-plus mr-2 sm:mr-3 text-sm sm:text-lg"></i>
-                            Start New Chat
-                        </h2>
-                    </div>
-                    <div class="p-4 sm:p-6 h-[400px] sm:h-[500px] overflow-y-auto custom-scrollbar">
-                        <p class="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 flex items-center">
-                            <i class="fas fa-info-circle text-orange-500 mr-2 text-xs sm:text-sm"></i>
-                            Start a conversation with team members
-                        </p>
-                        <div class="space-y-2 sm:space-y-3">
-                            @foreach($availableUsers as $user)
-                            <a href="{{ route('manager.chat.direct', $user) }}"
-                               class="group flex items-center space-x-3 sm:space-x-4 p-3 sm:p-4 rounded-xl border border-gray-200/60 hover:border-orange-300 hover:bg-orange-50/30 transition-all duration-200 hover:shadow-md">
-                                <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-semibold shadow-md group-hover:scale-110 transition-transform flex-shrink-0">
-                                    {{ strtoupper(substr($user->name, 0, 1)) }}
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-xs sm:text-sm font-semibold text-gray-900 group-hover:text-orange-700 transition-colors truncate">
-                                        {{ $user->name }}
-                                    </p>
-                                    <p class="text-xs text-gray-500 capitalize">{{ $user->role }}</p>
-                                </div>
-                                <i class="fas fa-chevron-right text-gray-400 group-hover:text-orange-600 transition-colors text-xs sm:text-sm"></i>
-                            </a>
-                            @endforeach
-                        </div>
+        document.body.appendChild(toast);
 
-                        @if($availableUsers->count() === 0)
-                        <div class="text-center py-6 sm:py-8 h-full flex flex-col justify-center">
-                            <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                                <i class="fas fa-user-plus text-gray-400 text-lg sm:text-2xl"></i>
-                            </div>
-                            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-2">No Users Available</h3>
-                            <p class="text-gray-500 text-xs sm:text-sm">All team members are already in your chats</p>
-                        </div>
-                        @endif
-                    </div>
+        // Animate in
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full');
+        }, 10);
+
+        // Set up close button
+        toast.querySelector('button').addEventListener('click', () => {
+            toast.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 300);
+        });
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }
+        }, 5000);
+    }
+
+    function updateUnreadCounts(data = null) {
+        // Update unread message counts throughout the UI
+        if (data) {
+            // Update counts from API response
+            Object.keys(data).forEach(roomId => {
+                const badge = document.querySelector(`.unread-badge[data-room-id="${roomId}"]`);
+                if (badge) {
+                    if (data[roomId] > 0) {
+                        badge.textContent = data[roomId];
+                        badge.classList.remove('hidden');
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        // Update total unread count in header
+        updateTotalUnreadCount();
+    }
+
+    function updateTotalUnreadCount() {
+        // Calculate and update total unread count
+        const badges = document.querySelectorAll('.unread-badge:not(.hidden)');
+        let total = 0;
+
+        badges.forEach(badge => {
+            total += parseInt(badge.textContent);
+        });
+
+        const totalBadge = document.getElementById('total-unread-count');
+        if (totalBadge) {
+            if (total > 0) {
+                totalBadge.textContent = total;
+                totalBadge.classList.remove('hidden');
+            } else {
+                totalBadge.classList.add('hidden');
+            }
+        }
+    }
+
+    function markMessagesAsRead(roomId) {
+        // Send request to mark messages as read
+        fetch(`/api/chat/rooms/${roomId}/mark-read`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update UI
+            const badge = document.querySelector(`.unread-badge[data-room-id="${roomId}"]`);
+            if (badge) {
+                badge.classList.add('hidden');
+            }
+            updateTotalUnreadCount();
+        });
+    }
+</script>
+
+<div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-gray-900">Messages</h1>
+                    <span id="total-unread-count" class="hidden ml-2 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center"></span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="{{ route('manager.projects.index') }}"
+                       class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Back to Projects
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <style>
-        /* Custom Scrollbar Styles */
-        .custom-scrollbar {
-            scrollbar-width: thin;
-            scrollbar-color: #cbd5e1 #f1f5f9;
-        }
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Notification Toast Container -->
+        <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Project Chats -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4">
+                    <h2 class="text-lg font-semibold text-white flex items-center">
+                        <i class="fas fa-users mr-3"></i>
+                        Project Chats
+                        <span class="ml-2 bg-white/20 px-2 py-1 rounded-full text-xs font-medium">
+                            {{ $projectRooms->count() }} projects
+                        </span>
+                    </h2>
+                </div>
+                <div class="h-[500px] overflow-y-auto">
+                    @forelse($projectRooms as $room)
+                    <a href="{{ route('manager.chat.project', $room->project) }}"
+                       class="chat-room-link block border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150 p-4"
+                       data-room-id="{{ $room->id }}">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center text-white">
+                                    <i class="fas fa-project-diagram"></i>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between">
+                                    <h3 class="text-sm font-semibold text-gray-900 truncate">{{ $room->project->name }}</h3>
+                                    @if($room->unreadMessagesCount(auth()->id()) > 0)
+                                    <span class="unread-badge bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ml-2 flex-shrink-0"
+                                          data-room-id="{{ $room->id }}">
+                                        {{ $room->unreadMessagesCount(auth()->id()) }}
+                                    </span>
+                                    @endif
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Project Discussion</p>
 
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 3px;
-        }
+                                @if($room->messages->count() > 0)
+                                <div class="mt-3 pt-3 border-t border-gray-100">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-6 h-6 bg-primary-100 rounded-full flex items-center justify-center text-primary-700 text-xs font-bold flex-shrink-0">
+                                            {{ strtoupper(substr($room->messages->first()->user->name, 0, 1)) }}
+                                        </div>
+                                        <p class="text-sm text-gray-600 truncate flex-1">
+                                            <span class="font-medium text-gray-900">{{ $room->messages->first()->user->name }}</span>:
+                                            {{ Str::limit($room->messages->first()->message, 25) }}
+                                        </p>
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-1">
+                                        {{ $room->messages->first()->created_at->diffForHumans() }}
+                                    </p>
+                                </div>
+                                @else
+                                <div class="mt-3 pt-3 border-t border-gray-100">
+                                    <p class="text-sm text-gray-400 italic">No messages yet</p>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </a>
+                    @empty
+                    <div class="text-center py-12">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-users text-gray-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Project Chats</h3>
+                        <p class="text-gray-500 text-sm mb-4">
+                            @if(auth()->user()->role === 'admin')
+                            You don't have any projects assigned as manager yet.
+                            @else
+                            No project chats available.
+                            @endif
+                        </p>
+                        <a href="{{ route('manager.projects.index') }}"
+                           class="inline-flex items-center px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md text-sm font-medium transition-colors">
+                            <i class="fas fa-plus mr-2"></i>
+                            Create Project
+                        </a>
+                    </div>
+                    @endforelse
+                </div>
+            </div>
 
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
-            transition: background 0.2s ease;
-        }
+            <!-- Direct Messages -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-green-600 to-emerald-700 px-6 py-4">
+                    <h2 class="text-lg font-semibold text-white flex items-center">
+                        <i class="fas fa-comment-dots mr-3"></i>
+                        Direct Messages
+                        <span class="ml-2 bg-white/20 px-2 py-1 rounded-full text-xs font-medium">
+                            {{ $directRooms->count() }} chats
+                        </span>
+                    </h2>
+                </div>
+                <div class="h-[500px] overflow-y-auto">
+                    @forelse($directRooms as $room)
+                    @php
+                        $otherUser = $room->participants->where('user_id', '!=', auth()->id())->first()->user;
+                    @endphp
+                    <a href="{{ route('manager.chat.direct', $otherUser) }}"
+                       class="chat-room-link block border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150 p-4"
+                       data-room-id="{{ $room->id }}">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center text-white">
+                                    <span class="font-semibold">{{ strtoupper(substr($otherUser->name, 0, 1)) }}</span>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-start justify-between">
+                                    <div>
+                                        <h3 class="text-sm font-semibold text-gray-900">{{ $otherUser->name }}</h3>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 mt-1">
+                                            {{ ucfirst($otherUser->role) }}
+                                        </span>
+                                    </div>
+                                    @if($room->unreadMessagesCount(auth()->id()) > 0)
+                                    <span class="unread-badge bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ml-2 flex-shrink-0"
+                                          data-room-id="{{ $room->id }}">
+                                        {{ $room->unreadMessagesCount(auth()->id()) }}
+                                    </span>
+                                    @endif
+                                </div>
 
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
+                                @if($room->messages->count() > 0)
+                                <div class="mt-3 pt-3 border-t border-gray-100">
+                                    <p class="text-sm text-gray-600 truncate">
+                                        {{ Str::limit($room->messages->first()->message, 30) }}
+                                    </p>
+                                    <p class="text-xs text-gray-400 mt-1">
+                                        {{ $room->messages->first()->created_at->diffForHumans() }}
+                                    </p>
+                                </div>
+                                @else
+                                <div class="mt-3 pt-3 border-t border-gray-100">
+                                    <p class="text-sm text-gray-400 italic">No messages yet</p>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+                    </a>
+                    @empty
+                    <div class="text-center py-12">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-comment text-gray-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Direct Messages</h3>
+                        <p class="text-gray-500 text-sm">Start a conversation with team members</p>
+                    </div>
+                    @endforelse
+                </div>
+            </div>
 
-        /* Ensure no vertical scroll on body */
-        html, body {
-            overflow-x: hidden;
-        }
+            <!-- Start New Chat -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-orange-600 to-amber-700 px-6 py-4">
+                    <h2 class="text-lg font-semibold text-white flex items-center">
+                        <i class="fas fa-plus mr-3"></i>
+                        Start New Chat
+                    </h2>
+                </div>
+                <div class="p-6 h-[500px] overflow-y-auto">
+                    <p class="text-sm text-gray-600 mb-4 flex items-center">
+                        <i class="fas fa-info-circle text-orange-500 mr-2"></i>
+                        Start a conversation with team members
+                    </p>
+                    <div class="space-y-3">
+                        @foreach($availableUsers as $user)
+                        <a href="{{ route('manager.chat.direct', $user) }}"
+                           class="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-all duration-150">
+                            <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                {{ strtoupper(substr($user->name, 0, 1)) }}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold text-gray-900">{{ $user->name }}</p>
+                                <p class="text-xs text-gray-500 capitalize">{{ $user->role }}</p>
+                            </div>
+                            <i class="fas fa-chevron-right text-gray-400"></i>
+                        </a>
+                        @endforeach
+                    </div>
 
-        /* Responsive text truncation */
-        .truncate-2-lines {
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
+                    @if($availableUsers->count() === 0)
+                    <div class="text-center py-12">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-user-plus text-gray-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No Users Available</h3>
+                        <p class="text-gray-500 text-sm">All team members are already in your chats</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-        /* Smooth transitions for all interactive elements */
-        .transition-all {
-            transition-property: all;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 150ms;
-        }
+<style>
+    /* Custom scrollbar */
+    .overflow-y-auto {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 #f1f5f9;
+    }
 
-        /* Mobile optimizations */
-        @media (max-width: 640px) {
-            .min-h-screen {
-                min-height: auto;
-            }
-        }
+    .overflow-y-auto::-webkit-scrollbar {
+        width: 6px;
+    }
 
-        /* Ensure cards don't overflow on small screens */
-        @media (max-width: 480px) {
-            .rounded-2xl {
-                border-radius: 1rem;
-            }
+    .overflow-y-auto::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+    }
 
-            .p-3 {
-                padding: 0.75rem;
-            }
+    .overflow-y-auto::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
 
-            .space-x-3 > :not([hidden]) ~ :not([hidden]) {
-                --tw-space-x-reverse: 0;
-                margin-right: calc(0.75rem * var(--tw-space-x-reverse));
-                margin-left: calc(0.75rem * calc(1 - var(--tw-space-x-reverse)));
-            }
-        }
+    .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
 
-        /* Fix for very small screens */
-        @media (max-width: 360px) {
-            .text-sm {
-                font-size: 0.75rem;
-                line-height: 1rem;
-            }
+    /* Smooth transitions */
+    .transition-colors {
+        transition-property: background-color, border-color, color, fill, stroke;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
+    }
 
-            .text-xs {
-                font-size: 0.7rem;
-                line-height: 0.875rem;
-            }
+    .transition-all {
+        transition-property: all;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 150ms;
+    }
 
-            .p-3 {
-                padding: 0.5rem;
-            }
-        }
-    </style>
+    .transform {
+        transition-property: transform;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 300ms;
+    }
+</style>
 @endsection

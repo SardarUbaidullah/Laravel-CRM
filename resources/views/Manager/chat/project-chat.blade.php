@@ -288,7 +288,7 @@
                             <div class="flex space-x-3">
                                 <label for="attachment" class="cursor-pointer group">
                                     <input type="file" id="attachment" name="attachment" class="hidden">
-                                    <span class="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 group-hover:from-purple-600 group-hover:to-pink-700 rounded-xl flex items-center justify-center text-white transition-all duration-200 shadow-lg group-hover:shadow-xl group-hover:scale-105">
+                                    <span style="display: none;" class="w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 group-hover:from-purple-600 group-hover:to-pink-700 rounded-xl flex items-center justify-center text-white transition-all duration-200 shadow-lg group-hover:shadow-xl group-hover:scale-105">
                                         <i class="fas fa-paperclip text-lg"></i>
                                     </span>
                                 </label>

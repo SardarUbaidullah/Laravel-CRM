@@ -29,6 +29,10 @@
         @media (min-width: 1024px) {
             .sidebar-desktop {
                 display: flex;
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                overflow-y: auto;
             }
 
             .sidebar-mobile {
@@ -81,8 +85,7 @@
 
     <div class="flex min-h-screen">
         <!-- Desktop Sidebar (Always visible on desktop) -->
-        <div
-            class="sidebar-desktop lg:!flex hidden w-64 bg-white border-r border-gray-200 min-h-screen h-full  flex-col">
+        <div class="sidebar-desktop lg:!flex hidden w-64 bg-white border-r border-gray-200 flex-col">
             <!-- Logo -->
             <div class="p-6 border-b border-gray-200">
                 <div class="flex items-center space-x-3">
@@ -133,62 +136,10 @@
             </div>
         </div>
 
-        <!-- Mobile Sidebar (Slides in from left) -->
-        <div id="sidebar-mobile" class="sidebar-mobile flex-col">
-            <!-- Logo -->
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-rocket text-white"></i>
-                    </div>
-                    <div>
-                        <h1 class="text-xl font-bold text-gray-900">Client Portal</h1>
-                        <p class="text-sm text-gray-500">Dashboard</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Navigation -->
-            <nav class="flex-1 py-6 px-4 overflow-y-auto">
-                <div class="space-y-2">
-                    <a href="{{ route('client.dashboard') }}"
-                        class="flex items-center space-x-3 py-3 px-4 rounded-lg transition-all duration-200 {{ request()->routeIs('client.dashboard') ? 'active-nav' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
-                        <i class="fas fa-chart-pie w-5 text-center"></i>
-                        <span class="font-medium">Dashboard</span>
-                    </a>
-                    <a href="{{ route('client.projects') }}"
-                        class="flex items-center space-x-3 py-3 px-4 rounded-lg transition-all duration-200 {{ request()->routeIs('client.projects*') ? 'active-nav' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
-                        <i class="fas fa-briefcase w-5 text-center"></i>
-                        <span class="font-medium">Projects</span>
-                    </a>
-                </div>
-            </nav>
-
-            <!-- User Section -->
-            <div class="p-4 border-t border-gray-200">
-                <div class="flex items-center space-x-3">
-                    <div
-                        class="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-semibold">
-                        {{ substr(auth()->user()->name, 0, 1) }}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-900 truncate">{{ auth()->user()->name }}</p>
-                        <p class="text-xs text-gray-500 truncate">Client</p>
-                    </div>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="text-gray-400 hover:text-red-500 transition-colors duration-200">
-                            <i class="fas fa-sign-out-alt"></i>
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
         <!-- Main Content -->
         <div class="flex-1 flex flex-col min-h-screen">
             <!-- Header -->
-            <header class="bg-white border-b border-gray-200">
+            <header class="bg-white border-b border-gray-200 sticky top-0 z-30">
                 <div class="flex items-center justify-between px-6 py-4">
                     <!-- Mobile Menu Button -->
                     <button id="menuToggle" class="lg:hidden block">
@@ -209,6 +160,58 @@
             <main class="flex-1 p-6">
                 @yield('content')
             </main>
+        </div>
+    </div>
+
+    <!-- Mobile Sidebar (Slides in from left) -->
+    <div id="sidebar-mobile" class="sidebar-mobile flex-col">
+        <!-- Logo -->
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-rocket text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-900">Client Portal</h1>
+                    <p class="text-sm text-gray-500">Dashboard</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 py-6 px-4 overflow-y-auto">
+            <div class="space-y-2">
+                <a href="{{ route('client.dashboard') }}"
+                    class="flex items-center space-x-3 py-3 px-4 rounded-lg transition-all duration-200 {{ request()->routeIs('client.dashboard') ? 'active-nav' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                    <i class="fas fa-chart-pie w-5 text-center"></i>
+                    <span class="font-medium">Dashboard</span>
+                </a>
+                <a href="{{ route('client.projects') }}"
+                    class="flex items-center space-x-3 py-3 px-4 rounded-lg transition-all duration-200 {{ request()->routeIs('client.projects*') ? 'active-nav' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}">
+                    <i class="fas fa-briefcase w-5 text-center"></i>
+                    <span class="font-medium">Projects</span>
+                </a>
+            </div>
+        </nav>
+
+        <!-- User Section -->
+        <div class="p-4 border-t border-gray-200">
+            <div class="flex items-center space-x-3">
+                <div
+                    class="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center text-white font-semibold">
+                    {{ substr(auth()->user()->name, 0, 1) }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-900 truncate">{{ auth()->user()->name }}</p>
+                    <p class="text-xs text-gray-500 truncate">Client</p>
+                </div>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="text-gray-400 hover:text-red-500 transition-colors duration-200">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 

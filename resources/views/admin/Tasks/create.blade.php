@@ -89,6 +89,35 @@
                     </div>
 
                     <div>
+                        <label for="milestone_id" class="block text-sm font-medium text-gray-700 mb-2">Milestone</label>
+                        <select
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+                            id="milestone_id"
+                            name="milestone_id"
+                        >
+                            <option value="">Select Milestone</option>
+                            @if($selectedProject && $milestones->count() > 0)
+                                @foreach($milestones as $milestone)
+                                    <option value="{{ $milestone->id }}" {{ old('milestone_id') == $milestone->id ? 'selected' : '' }}>
+                                        {{ $milestone->title }}
+                                        @if($milestone->due_date)
+                                            (Due: {{ \Carbon\Carbon::parse($milestone->due_date)->format('M d, Y') }})
+                                        @endif
+                                        @if($milestone->status === 'completed')
+                                            ✅
+                                        @endif
+                                    </option>
+                                @endforeach
+                            @endif
+                        </select>
+                        <p class="mt-1 text-sm text-gray-500" id="milestone-help">
+                            Select a project first to see available milestones
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
                         <label for="created_by" class="block text-sm font-medium text-gray-700 mb-2">Created By</label>
                         <select
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
@@ -185,4 +214,62 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const projectSelect = document.getElementById('project_id');
+    const milestoneSelect = document.getElementById('milestone_id');
+    const milestoneHelp = document.getElementById('milestone-help');
+
+    projectSelect.addEventListener('change', function() {
+        const projectId = this.value;
+
+        // Clear current milestones
+        milestoneSelect.innerHTML = '<option value="">Select Milestone</option>';
+        milestoneHelp.textContent = 'Loading milestones...';
+
+        if (!projectId) {
+            milestoneHelp.textContent = 'Select a project first to see available milestones';
+            return;
+        }
+
+        // Fetch milestones for the selected project
+        fetch(`/projects/${projectId}/milestones`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(milestones => {
+                milestoneSelect.innerHTML = '<option value="">Select Milestone</option>';
+
+                if (milestones.length === 0) {
+                    milestoneSelect.innerHTML = '<option value="">No milestones found for this project</option>';
+                    milestoneHelp.textContent = 'No milestones available for this project';
+                    return;
+                }
+
+                milestones.forEach(milestone => {
+                    const option = document.createElement('option');
+                    option.value = milestone.id;
+                    option.textContent = milestone.display_text;
+                    milestoneSelect.appendChild(option);
+                });
+
+                milestoneHelp.textContent = `${milestones.length} milestone(s) found for this project`;
+            })
+            .catch(error => {
+                console.error('Error fetching milestones:', error);
+                milestoneSelect.innerHTML = '<option value="">Error loading milestones</option>';
+                milestoneHelp.textContent = 'Error loading milestones. Please try again.';
+            });
+    });
+
+    // Trigger change event if project is pre-selected (from query parameter)
+    @if($selectedProject)
+        projectSelect.dispatchEvent(new Event('change'));
+    @endif
+});
+</script>
 @endsection
