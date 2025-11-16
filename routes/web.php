@@ -12,11 +12,13 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\MilestoneController;
 use App\Http\Controllers\TimeLogController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\FileController;
 use App\Http\Controllers\TeamOwnController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\TeamChatController;
 use App\Http\Controllers\Manager\ChatController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SubTaskController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Models\Projects as Project;
@@ -29,7 +31,58 @@ use App\Http\Controllers\Manager\TaskController as ManagerTaskController;
 use App\Http\Controllers\Manager\TeamController as manager_TeamController;
 use App\Http\Controllers\Manager\SubTaskController as ManagerSubTaskController;
 
+Route::get('/test-chat-notifications', [ChatController::class, 'testChatNotification'])->middleware('auth');Route::get('/chat/updates', [ChatController::class, 'getChatListUpdates'])->name('manager.chat.updates');
+Route::post('/chat/rooms/{chatRoom}/mark-read', [ChatController::class, 'markRoomAsRead'])->name('manager.chat.room.mark-read');
+// Notification routes
+// Notifications Routes
+Route::prefix('notifications')->group(function () {
+    Route::get('/', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::get('/count', [NotificationController::class, 'unreadCount'])->name('notifications.count');
+    Route::delete('/clear', [NotificationController::class, 'clearAll'])->name('notifications.clear');
+});
 
+
+// Add this temporary route for testing
+Route::get('/debug-notifications', function() {
+    $user = auth()->user();
+
+    if (!$user) {
+        return response()->json(['error' => 'User not authenticated'], 401);
+    }
+
+    $notifications = $user->notifications()
+        ->latest()
+        ->take(20)
+        ->get()
+        ->map(function($notification) {
+            // Safely handle data - whether it's string or array
+            $data = $notification->data;
+            if (is_string($data)) {
+                $data = json_decode($data, true);
+            }
+
+            return [
+                'id' => $notification->id,
+                'type' => $notification->type,
+                'data' => $data,
+                'read_at' => $notification->read_at,
+                'created_at' => $notification->created_at->toISOString(),
+            ];
+        });
+
+    $unreadCount = $user->unreadNotifications()->count();
+
+    return response()->json([
+        'success' => true,
+        'user_id' => $user->id,
+        'user_name' => $user->name,
+        'unread_count' => $unreadCount,
+        'total_notifications' => $user->notifications()->count(),
+        'notifications' => $notifications
+    ]);
+});
 Route::middleware('auth')->group(function () {
     // Custom Profile Routes - Use Blade template instead of Inertia
     Route::get('/profile', function () {
@@ -63,14 +116,9 @@ Route::middleware(['auth'])->group(function () {
 
     // API routes for dynamic loading
     Route::get('/comments', [CommentController::class, 'getComments'])->name('comments.get');
+
 });
 // Comment routes
-
-
-
-
-
-
 
 
 
@@ -87,6 +135,11 @@ Route::prefix('chat')->group(function () {
     Route::post('/{chatRoom}/read', [ChatController::class, 'markAsRead'])->name('manager.chat.read');
     Route::get('/{chatRoom}/messages', [ChatController::class, 'getMessages'])->name('manager.chat.messages');
 });
+
+// Chat sync routes
+Route::get('/chat/rooms/{chatRoom}/messages', [ChatController::class, 'getMessagesForSync'])->name('manager.chat.messages.sync');
+Route::post('/chat/rooms/{chatRoom}/messages/{message}/read', [ChatController::class, 'markMessageAsRead'])->name('manager.chat.message.read');
+
 Route::put('/password', [PasswordController::class, 'update'])->name('password.update');
 
 // Team routes
@@ -176,7 +229,10 @@ Route::post('/files/{id}/access', [FileController::class, 'updateAccess'])->name
 
 });
 
+
+
 Route::middleware(['auth', 'super_admin'])->group(function () {
+    Route::resource('projects', ProjectController::class);
 
     // Profile
 // Super Admin Task Routes
@@ -187,7 +243,6 @@ Route::post('/tasks/{id}/in-progress', [TaskController::class, 'markAsInProgress
 Route::get('/projects/{projectId}/milestones', [TaskController::class, 'getMilestones'])->name('tasks.milestones');
 Route::post('/tasks/{id}/update-status', [TaskController::class, 'updateStatus'])->name('tasks.update-status');
     // Projects
-    Route::resource('projects', ProjectController::class);
 
     // Teams
     Route::resource('teams', TeamController::class);
@@ -215,10 +270,24 @@ Route::post('/tasks/{id}/update-status', [TaskController::class, 'updateStatus']
 
 // Reports Routes for Super Admin
    // routes/web.php
+
+
+   Route::middleware(['auth', 'super_admin'])->group(function () {
+    // Categories Routes
+    Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
+    Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    Route::patch('/categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('categories.toggle-status');
+});
 Route::prefix('admin')->middleware(['auth', 'super_admin'])->group(function () {
     Route::prefix('reports')->group(function () {
         Route::get('/', [AdminReportController::class, 'index'])->name('admin.reports');
         Route::get('/quick-stats', [AdminReportController::class, 'quickStats'])->name('admin.reports.quick-stats');
+         Route::patch('/users/{user}/toggle-project-permission', [UserController::class, 'toggleProjectPermission'])
+         ->name('admin.users.toggle-project-permission');
         Route::get('/data/{type}', [AdminReportController::class, 'getReportData'])->name('admin.reports.data');
     });
 });
@@ -249,6 +318,11 @@ Route::prefix('manager')
 
         // Dashboard
 //milestone
+
+   Route::get('/projects/create', [ManagerProjectController::class, 'create'])->name('projects.create');
+    Route::post('/projects', [ManagerProjectController::class, 'store'])->name('projects.store');
+    Route::get('/projects', [ManagerProjectController::class, 'index'])->name('projects.index');
+    Route::get('/projects/{id}', [ManagerProjectController::class, 'show'])->name('projects.show');
 Route::resource('milestones', MilestoneController::class);
 
 
@@ -262,11 +336,7 @@ Route::put('/tasks/{task}/status', [TaskController::class, 'updateStatus'])
         Route::patch('/projects/{project}/status', [ManagerProjectController::class, 'updateStatus'])
     ->name('projects.updateStatus');
 // Route::post('/projects/{project}/update-status', [ManagerProjectController::class, 'updateStatus'])->name('projects.update-status');
-Route::get('/projects/running', [ManagerProjectController::class, 'running'])->name('projects.running');
-Route::get('/projects/completed', [ManagerProjectController::class, 'completed'])->name('projects.completed');
-Route::post('/projects/{id}/complete', [ManagerProjectController::class, 'markComplete'])->name('projects.complete');
-Route::post('/projects/{id}/progress', [ManagerProjectController::class, 'markInProgress'])->name('projects.progress');
-        Route::resource('projects', ManagerProjectController::class);
+
 
         // Tasks
         Route::get('/tasks/pending', [ManagerTaskController::class, 'pendingTasks'])->name('tasks.pending');

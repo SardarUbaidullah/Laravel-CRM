@@ -198,6 +198,36 @@ class CalendarController extends Controller
             $dueDate = $task->due_date->format('Y-m-d');
             $isNoDateTask = false;
         }
+           // FIX: Get the assigned user's name by their ID and show "YOU" if it's the current user
+    $assignedUserName = 'Unassigned';
+    if ($task->assigned_to) {
+        // Load the assigned user relationship if not already loaded
+        if (!$task->relationLoaded('assignedUser')) {
+            $task->load('assignedUser');
+        }
+
+        // Check if assignedUser relationship exists and has name
+        if ($task->assignedUser) {
+            // Check if the assigned user is the current authenticated user
+            if ($task->assigned_to == auth()->id()) {
+                $assignedUserName = 'YOU';
+            } else {
+                $assignedUserName = $task->assignedUser->name;
+            }
+        } else {
+            // Fallback: Try to find user by ID
+            $assignedUser = \App\Models\User::find($task->assigned_to);
+            if ($assignedUser) {
+                // Check if the assigned user is the current authenticated user
+                if ($task->assigned_to == auth()->id()) {
+                    $assignedUserName = 'YOU';
+                } else {
+                    $assignedUserName = $assignedUser->name;
+                }
+            }
+        }
+    }
+
 
         Log::debug('Formatting task event', [
             'task_id' => $task->id,
@@ -223,8 +253,8 @@ class CalendarController extends Controller
                 'project_id' => $task->project->id,
                 'priority' => $task->priority,
                 'status' => $task->status,
-                'assigned_to' => $task->user ? $task->user->name : 'Unassigned',
-                'description' => $task->description,
+                'assigned_to' => $assignedUserName,
+                'description' =>  $task->description,
                 'type' => 'task',
                 'is_completed' => $isCompleted,
                 'has_due_date' => !$isNoDateTask,
@@ -235,6 +265,8 @@ class CalendarController extends Controller
 
     private function formatProjectEvent($project)
     {
+         $manager = \App\Models\User::find($project->manager_id);
+    $assignedName = $manager ? ($project->manager_id == auth()->id() ? 'YOU' : $manager->name) : 'Unassigned';
         return [
             'id' => 'project-' . $project->id,
             'title' => $project->name,
@@ -248,9 +280,10 @@ class CalendarController extends Controller
                 'project' => $project->name,
                 'project_id' => $project->id,
                 'type' => 'project_deadline',
-                'description' => 'Project deadline',
+                'description' => $project->description,
                 'is_completed' => false,
-                'has_due_date' => true
+                'has_due_date' => true,
+                'assigned_to' => $assignedName
             ]
         ];
     }

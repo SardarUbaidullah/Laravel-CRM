@@ -6,31 +6,103 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Client;
 use Illuminate\Http\Request;
+use App\Providers\NotificationService;
+
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    // Show all users
-    public function index()
+
+
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
     {
-        $users = User::with('client')->get();
-        return view('admin.users.index', compact('users'));
+        $this->notificationService = $notificationService;
     }
+
+
+     public function toggleProjectPermission(Request $request, User $user)
+    {
+        // Only allow for managers
+        if ($user->role !== 'admin') {
+            return redirect()->back()->with('error', 'Project creation permission can only be granted to managers.');
+        }
+
+        $newPermission = !$user->can_create_project;
+        $user->update(['can_create_project' => $newPermission]);
+
+        // Notify the manager about permission change
+        $this->notificationService->sendToUser($user->id, 'project_permission_changed', [
+            'title' => $newPermission ? 'Project Creation Permission Granted' : 'Project Creation Permission Revoked',
+            'message' => $newPermission
+                ? "You can now create projects in the system."
+                : "Your project creation permission has been revoked.",
+            'action_url' => $newPermission ? route('manager.projects.create') : route('manager.projects.index'),
+            'icon' => $newPermission ? 'fas fa-check-circle' : 'fas fa-times-circle',
+            'color' => $newPermission ? 'green' : 'red',
+        ]);
+
+        $message = $newPermission
+            ? "Project creation permission granted to {$user->name}"
+            : "Project creation permission revoked from {$user->name}";
+
+        return redirect()->back()->with('success', $message);
+    }
+    // Show all users
+   // In UserController - update index method
+// In UserController - update index method
+public function index(Request $request)
+{
+    $query = User::with('client');
+
+    // Department filter
+    if ($request->has('department') && $request->department != 'all') {
+        $query->where('department', $request->department);
+    }
+
+    // Role filter
+    if ($request->has('role') && $request->role != 'all') {
+        $query->where('role', $request->role);
+    }
+
+    $users = $query->get();
+
+    // Get unique departments from database (dynamic)
+    $departments = User::whereNotNull('department')
+                      ->where('department', '!=', '')
+                      ->where('department', '!=', 'Not Assigned')
+                      ->distinct()
+                      ->orderBy('department')
+                      ->pluck('department');
+
+    return view('admin.users.index', compact('users', 'departments'));
+}
 
     // Show create user form
-    public function create()
-    {
-        return view('admin.users.create');
-    }
+  // In UserController - update create method
+public function create()
+{
+    // Get existing departments for suggestions
+    $departments = User::whereNotNull('department')
+                      ->where('department', '!=', '')
+                      ->where('department', '!=', 'Not Assigned')
+                      ->distinct()
+                      ->orderBy('department')
+                      ->pluck('department');
 
+    return view('admin.users.create', compact('departments'));
+}
     // Store new user created by Super Admin
-   public function store(Request $request)
+   // In UserController - update store method
+public function store(Request $request)
 {
     $validated = $request->validate([
         'name' => 'required|string|max:255',
         'email' => 'required|email|unique:users',
         'password' => 'required|min:6',
         'role' => 'required|string',
+        'department' => 'nullable|string|max:255',
         'phone' => 'nullable|string',
         'company' => 'nullable|string',
     ]);
@@ -40,27 +112,31 @@ class UserController extends Controller
         'email' => $request->email,
         'password' => bcrypt($request->password),
         'role' => $request->role,
+        'department' => $request->department ?? 'Not Assigned',
     ];
 
     // If role is client, create a client record
     if ($request->role === 'client') {
-        Client::create([
+        $client = Client::create([
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
             'company' => $request->company,
             'status' => 'active',
         ]);
+
+        $userData['client_id'] = $client->id;
     }
 
-    // Create user without linking client_id
+    // Create user
     User::create($userData);
 
     return redirect()->route('users.index')->with('success', 'User created successfully.');
 }
 
 
-    public function edit(User $user)
+   // In UserController - update edit method
+public function edit(User $user)
 {
     $client = null;
 
@@ -69,7 +145,15 @@ class UserController extends Controller
         $client = Client::find($user->client_id);
     }
 
-    return view('admin.users.edit', compact('user', 'client'));
+    // Get existing departments for suggestions
+    $departments = User::whereNotNull('department')
+                      ->where('department', '!=', '')
+                      ->where('department', '!=', 'Not Assigned')
+                      ->distinct()
+                      ->orderBy('department')
+                      ->pluck('department');
+
+    return view('admin.users.edit', compact('user', 'client', 'departments'));
 }
 
 public function update(Request $request, User $user)
@@ -78,6 +162,7 @@ public function update(Request $request, User $user)
         'name' => 'required|string|max:255',
         'email' => 'required|email|unique:users,email,' . $user->id,
         'role' => 'required|in:super_admin,admin,manager,user,client',
+        'department' => 'nullable|string|max:255', // ✅ DEPARTMENT ADD KARO
         'password' => 'nullable|min:6',
         'phone' => 'nullable|string|max:20',
         'company' => 'nullable|string|max:255',
@@ -87,6 +172,7 @@ public function update(Request $request, User $user)
         'name' => $request->name,
         'email' => $request->email,
         'role' => $request->role,
+        'department' => $request->department ?? 'Not Assigned', // ✅ DEPARTMENT ADD KARO
         'phone' => $request->phone,
     ];
 

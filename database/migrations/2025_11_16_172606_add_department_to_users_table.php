@@ -9,14 +9,14 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
+ 
+// database/migrations/xxxx_xx_xx_xxxxxx_add_department_to_users_table.php
+public function up()
 {
     Schema::table('users', function (Blueprint $table) {
-        $table->string('role')->default('super_admin'); // roles: super_admin, admin, user
+        $table->string('department')->nullable()->after('role');
     });
 }
-
-
     /**
      * Reverse the migrations.
      */

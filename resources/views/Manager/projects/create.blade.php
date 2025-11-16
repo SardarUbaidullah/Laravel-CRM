@@ -14,7 +14,7 @@
             <h1 class="text-3xl font-bold text-gray-900">Create New Project</h1>
             <p class="text-gray-600 mt-2">Add a new project to the system</p>
         </div>
-        <a href="{{ route('projects.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition duration-200 flex items-center">
+        <a href="{{ route('manager.projects.index') }}" class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition duration-200 flex items-center">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
             </svg>
@@ -27,7 +27,7 @@
             <h2 class="text-lg font-medium text-gray-900">Project Information</h2>
         </div>
         <div class="p-6">
-            <form action="{{ route('projects.store') }}" method="POST" class="space-y-6" id="projectForm">
+            <form action="{{ route('manager.projects.store') }}" method="POST" class="space-y-6" id="projectForm">
                 @csrf
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -255,7 +255,7 @@
                 </div>
 
                 <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
-                    <a href="{{ route('projects.index') }}" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-200 font-medium">
+                    <a href="{{ route('manager.projects.index') }}" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition duration-200 font-medium">
                         Cancel
                     </a>
                     <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 font-medium flex items-center">

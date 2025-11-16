@@ -13,3 +13,8 @@ Broadcast::channel('chat.room.{roomId}', function ($user, $roomId) {
         })
         ->exists();
 });
+
+// Add user channel for notifications
+Broadcast::channel('user.{userId}', function ($user, $userId) {
+    return (int) $user->id === (int) $userId;
+});

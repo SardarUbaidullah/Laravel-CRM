@@ -85,6 +85,12 @@
             {{ session('error') }}
         </div>
     @endif
+    {{-- Add this where you want the create button to appear --}}
+@if(auth()->user()->can_create_project)
+    <a href="{{ route('manager.projects.create') }}" class="btn btn-success mb-3">
+        <i class="fas fa-plus"></i> Create New Project
+    </a>
+@endif
 
     <!-- Kanban Board -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">

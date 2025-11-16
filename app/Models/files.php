@@ -67,7 +67,7 @@ class Files extends Model
         return false;
     }
 
-    private function canAccessGeneralFile($userId)
+  private function canAccessGeneralFile($userId)
 {
     $user = User::find($userId);
 
@@ -86,8 +86,12 @@ class Files extends Model
         return true;
     }
 
-    // Check explicit access from JSON array
+    // Check explicit access from JSON array - convert to integers for comparison
     $accessibleUsers = $this->accessible_users ?? [];
+
+    // Ensure we're comparing integers
+    $accessibleUsers = array_map('intval', $accessibleUsers);
+    $userId = (int)$userId;
 
     // Debug accessible users
     \Log::info('Checking access for file:', [

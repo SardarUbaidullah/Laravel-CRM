@@ -27,25 +27,7 @@
         </p>
     </div>
 
-    <div class="flex items-center space-x-4 mt-4 lg:mt-0">
-        <div class="relative">
-            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-            <input
-                type="text"
-                id="searchInput"
-                placeholder="Search users, logs..."
-                class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary w-64 bg-white"
-            />
-        </div>
 
-        <button
-            id="clearCacheBtn"
-            class="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-[#9a8874] transition-colors font-medium flex items-center space-x-2"
-        >
-            <i class="fas fa-sync-alt"></i>
-            <span>Clear Cache</span>
-        </button>
-    </div>
 </div>
 
 <!-- Navigation Tabs -->

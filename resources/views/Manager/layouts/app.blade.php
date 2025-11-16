@@ -322,7 +322,12 @@
                             <a href="{{ url('/chat') }}"><i class="fas fa-comment"></i></a>
                         </button>
                     </div>
+<div class="flex items-center space-x-4">
+                <!-- Chat Notifications -->
+                @include('components.notifications')
 
+                <!-- User menu etc -->
+            </div>
                     <!-- Divider -->
                     <div class="w-px h-6 bg-border mx-2"></div>
 

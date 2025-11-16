@@ -91,7 +91,23 @@
                 </p>
             @enderror
         </div>
-
+<div>
+    <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+    <input
+        type="text"
+        name="department"
+        value="{{ old('department') }}"
+        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+        placeholder="Enter department name (optional)"
+        list="department_suggestions"
+    >
+    <datalist id="department_suggestions">
+        @foreach($departments ?? [] as $dept)
+            <option value="{{ $dept }}">
+        @endforeach
+    </datalist>
+    <p class="text-xs text-gray-500 mt-1">Start typing to see existing departments or enter a new one</p>
+</div>
         <!-- Client Information (Only show when role is client) -->
         <div id="client-info" class="hidden bg-blue-50 p-4 rounded-lg border border-blue-200">
             <h4 class="text-sm font-medium text-blue-900 mb-3">Client Information</h4>
@@ -157,5 +173,147 @@
         }
     });
 </script>
+<script>
+// Department Management
+document.addEventListener('DOMContentLoaded', function() {
+    const departmentSelect = document.getElementById('department_select');
+    const customDeptBtn = document.getElementById('custom_department_btn');
+    const customDeptInput = document.getElementById('custom_department_input');
+    const customDeptField = document.getElementById('custom_department');
 
+    // Toggle custom department input
+    if (customDeptBtn && customDeptInput) {
+        customDeptBtn.addEventListener('click', function() {
+            customDeptInput.classList.toggle('hidden');
+            if (!customDeptInput.classList.contains('hidden')) {
+                customDeptField.focus();
+                departmentSelect.value = '';
+            }
+        });
+
+        // When custom department is entered, update the select
+        customDeptField.addEventListener('input', function() {
+            if (this.value.trim() !== '') {
+                departmentSelect.value = '';
+            }
+        });
+
+        // When a department is selected from dropdown, clear custom input
+        departmentSelect.addEventListener('change', function() {
+            if (this.value !== '') {
+                customDeptField.value = '';
+                customDeptInput.classList.add('hidden');
+            }
+        });
+    }
+
+    // Professional Filters
+    const departmentFilter = document.getElementById('department_filter');
+    const roleFilter = document.getElementById('role_filter');
+    const resetFilters = document.getElementById('reset_filters');
+
+    function applyFilters() {
+        const department = departmentFilter.value;
+        const role = roleFilter.value;
+
+        let url = new URL(window.location.href);
+        let params = new URLSearchParams();
+
+        if (department !== 'all') {
+            params.set('department', department);
+        }
+
+        if (role !== 'all') {
+            params.set('role', role);
+        }
+
+        const queryString = params.toString();
+        window.location.href = queryString ? `${url.pathname}?${queryString}` : url.pathname;
+    }
+
+    if (departmentFilter) {
+        departmentFilter.addEventListener('change', applyFilters);
+    }
+
+    if (roleFilter) {
+        roleFilter.addEventListener('change', applyFilters);
+    }
+
+    if (resetFilters) {
+        resetFilters.addEventListener('click', function() {
+            window.location.href = "{{ route('users.index') }}";
+        });
+    }
+
+    // Mobile filter functionality
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    const userColumns = document.querySelectorAll('.user-column');
+
+    function initMobileView() {
+        if (window.innerWidth < 1024) {
+            userColumns.forEach((col, index) => {
+                if (index === 0) {
+                    col.style.display = 'block';
+                } else {
+                    col.style.display = 'none';
+                }
+            });
+        } else {
+            userColumns.forEach(col => {
+                col.style.display = 'block';
+            });
+        }
+    }
+
+    if (filterTabs.length > 0) {
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const role = this.getAttribute('data-role');
+
+                // Update active tab
+                filterTabs.forEach(t => {
+                    t.classList.remove('active', 'bg-purple-100', 'text-purple-800');
+                    t.classList.add('text-gray-600', 'hover:bg-gray-100');
+                });
+                this.classList.remove('text-gray-600', 'hover:bg-gray-100');
+                this.classList.add('active', 'bg-purple-100', 'text-purple-800');
+
+                // Show selected column, hide others on mobile
+                if (window.innerWidth < 1024) {
+                    userColumns.forEach(col => {
+                        if (col.getAttribute('data-role') === role) {
+                            col.style.display = 'block';
+                        } else {
+                            col.style.display = 'none';
+                        }
+                    });
+                }
+            });
+        });
+
+        window.addEventListener('resize', initMobileView);
+        initMobileView();
+    }
+});
+
+// Form submission - handle custom department
+document.querySelector('form')?.addEventListener('submit', function(e) {
+    const customDeptField = document.getElementById('custom_department');
+    const departmentSelect = document.getElementById('department_select');
+
+    if (customDeptField && customDeptField.value.trim() !== '') {
+        // Create a hidden input to submit the custom department
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'department';
+        hiddenInput.value = customDeptField.value.trim();
+        this.appendChild(hiddenInput);
+
+        // Disable the original select to avoid conflict
+        if (departmentSelect) {
+            departmentSelect.disabled = true;
+        }
+    }
+});
+</script>
 @endsection

@@ -1,24 +1,34 @@
 <?php
 
 namespace App\Http\Controllers\Manager;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-
 use App\Models\Projects;
 use App\Models\User;
+use App\Models\Client;
+use App\Models\Category;
 use App\Models\Tasks;
 use Illuminate\Http\Request;
+use App\Providers\NotificationService;
 
 class ProjectController extends Controller
 {
+    protected $notificationService;
+
+    public function __construct(NotificationService $notificationService)
+    {
+        $this->notificationService = $notificationService;
+    }
+
     // GET /projects
-      public function index()
+    public function index()
     {
         $user = auth()->user();
 
         // Get projects where user is manager
         $projects = Projects::where('manager_id', $user->id)
-            ->with(['tasks', 'teamMembers'])
+            ->with(['tasks', 'teamMembers', 'category'])
             ->latest()
             ->get();
 
@@ -32,10 +42,114 @@ class ProjectController extends Controller
                 $q->where('manager_id', $user->id);
             });
         })->distinct()->count();
-
-        return view('manager.projects.index', compact('projects', 'totalTasks', 'teamMembersCount'));
+ $categories = \App\Models\Category::where('is_active', true)->orderBy('name')->get();
+        return view('manager.projects.index', compact('projects', 'totalTasks', 'teamMembersCount','categories'));
     }
 
+    // GET /projects/create - Only if manager has permission
+    public function create()
+    {
+        $user = auth()->user();
+
+        if (!$user->can_create_project) {
+            return redirect()->route('manager.projects.index')
+                           ->with('error', 'You do not have permission to create projects.');
+        }
+
+        $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
+        $clients = Client::active()->get();
+        $teamMembers = User::where('role', 'user')->get();
+        $categories = Category::where('is_active', true)->get();
+
+        return view('manager.projects.create', compact('managers', 'clients', 'teamMembers', 'categories'));
+    }
+
+    // POST /projects - Store new project (MANAGER SPECIFIC)
+    public function store(Request $request)
+    {
+        $user = auth()->user();
+
+        // Check permission
+        if (!$user->can_create_project) {
+            return redirect()->route('manager.projects.index')
+                           ->with('error', 'You do not have permission to create projects.');
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'client_id' => 'required|exists:clients,id',
+            'manager_id' => 'required|exists:users,id',
+            'category_id' => 'required|exists:categories,id',
+            'start_date' => 'required|date|after_or_equal:today',
+            'due_date' => 'required|date|after:start_date',
+            'status' => 'required|in:pending,in_progress,completed',
+        ]);
+
+        // Manager can choose any manager (including themselves or others)
+        $managerId = $request->manager_id;
+
+        $project = Projects::create([
+            'name' => $request->name,
+            'description' => $request->description,
+            'start_date' => $request->start_date,
+            'due_date' => $request->due_date,
+            'manager_id' => $managerId,
+            'client_id' => $request->client_id,
+            'category_id' => $request->category_id,
+            'status' => $request->status,
+        ]);
+
+        // Create project chat room
+        if (method_exists($project, 'createProjectChatRoom')) {
+            $project->createProjectChatRoom();
+        }
+
+        // Add team members if selected
+        if ($request->has('team_members')) {
+            foreach ($request->team_members as $memberId) {
+                $project->teamMembers()->attach($memberId);
+
+                // Notify team member they were added to project (EXCEPT if they are the manager)
+                $teamMember = User::find($memberId);
+                if ($teamMember && $teamMember->id != $managerId) {
+                    $this->notificationService->notifyTeamMemberAdded($project, $teamMember, $user);
+                }
+            }
+        }
+
+        // Notify the assigned manager (if it's not the current user)
+        $manager = User::find($managerId);
+        if ($manager && $manager->id != $user->id) {
+            $this->notificationService->sendToUser($manager->id, 'project_assigned', [
+                'title' => 'Project Assigned',
+                'message' => "You have been assigned as manager for project: {$project->name}",
+                'action_url' => route('manager.projects.show', $project),
+                'icon' => 'fas fa-project-diagram',
+                'color' => 'purple',
+                'project_id' => $project->id,
+                'project_name' => $project->name,
+                'assigned_by' => $user->name,
+            ]);
+        }
+
+        // Notify super_admin that a project was created by manager
+        $superAdmin = User::where('role', 'super_admin')->first();
+        if ($superAdmin) {
+            // FIXED: Use the correct route that exists
+            $this->notificationService->sendToUser($superAdmin->id, 'project_created', [
+                'title' => 'New Project Created by Manager',
+                'message' => "New project '{$project->name}' has been created by manager " . $user->name,
+                'action_url' => route('projects.show', $project), // ✅ Use main projects.show route
+                'icon' => 'fas fa-project-diagram',
+                'color' => 'blue',
+                'project_id' => $project->id,
+                'project_name' => $project->name,
+                'created_by' => $user->name,
+            ]);
+        }
+
+        return redirect()->route('manager.projects.index')->with('success', 'Project created successfully!');
+    }
 
     // Running Projects
     public function running()
@@ -45,7 +159,7 @@ class ProjectController extends Controller
                        ->withCount(['tasks'])
                        ->with(['tasks' => function($query) {
                            $query->select('project_id', 'status');
-                       }])
+                       }, 'category'])
                        ->latest()
                        ->get();
 
@@ -74,7 +188,7 @@ class ProjectController extends Controller
                        ->withCount(['tasks'])
                        ->with(['tasks' => function($query) {
                            $query->select('project_id', 'status');
-                       }])
+                       }, 'category'])
                        ->latest()
                        ->get();
 
@@ -92,36 +206,45 @@ class ProjectController extends Controller
         return view('manager.projects.completed', compact('projects', 'completionStats'));
     }
 
-    // GET /projects/create
-
-
-    // POST /projects
+    // GET /projects/{id}
     public function show($id)
     {
         $project = Projects::where('manager_id', auth()->id())
-                          ->with(['tasks', 'tasks.assignee', 'tasks.user', 'manager'])
+                          ->with(['tasks', 'tasks.assignee', 'tasks.user', 'manager', 'category'])
                           ->withCount(['tasks'])
                           ->findOrFail($id);
 
         return view('manager.projects.show', compact('project'));
     }
 
+    // GET /projects/{id}/edit
     public function edit($id)
     {
-        $project = Projects::where('manager_id', auth()->id())->findOrFail($id);
-        return view('manager.projects.edit', compact('project'));
+        $project = Projects::where('manager_id', auth()->id())
+                          ->with(['teamMembers', 'category'])
+                          ->findOrFail($id);
+
+        $clients = Client::active()->get();
+        $teamMembers = User::where('role', 'user')->get();
+        $categories = Category::where('is_active', true)->get();
+
+        return view('manager.projects.edit', compact('project', 'clients', 'teamMembers', 'categories'));
     }
 
+    // PUT /projects/{id}
     public function update(Request $request, $id)
     {
         $project = Projects::where('manager_id', auth()->id())->findOrFail($id);
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'client_id' => 'required|exists:clients,id',
+            'category_id' => 'required|exists:categories,id',
             'start_date' => 'nullable|date',
             'due_date' => 'nullable|date|after:start_date',
             'status' => 'required|in:pending,in_progress,completed',
+            'team_members' => 'nullable|array',
+            'team_members.*' => 'exists:users,id'
         ]);
 
         $project->update([
@@ -129,13 +252,23 @@ class ProjectController extends Controller
             'description' => $request->description,
             'start_date' => $request->start_date,
             'due_date' => $request->due_date,
+            'client_id' => $request->client_id,
+            'category_id' => $request->category_id,
             'status' => $request->status,
         ]);
+
+        // Sync team members
+        if ($request->has('team_members')) {
+            $project->teamMembers()->sync($request->team_members);
+        } else {
+            $project->teamMembers()->detach();
+        }
 
         return redirect()->route('manager.projects.show', $project->id)
                         ->with('success', 'Project updated successfully!');
     }
 
+    // DELETE /projects/{id}
     public function destroy($id)
     {
         $project = Projects::where('manager_id', auth()->id())->findOrFail($id);
@@ -166,20 +299,25 @@ class ProjectController extends Controller
     }
 
     public function updateStatus(Request $request, Projects $project)
-{
-    try {
-        $validated = $request->validate([
-            'status' => 'required|in:pending,in_progress,completed'
-        ]);
+    {
+        try {
+            // Ensure the project belongs to the current manager
+            if ($project->manager_id != auth()->id()) {
+                abort(403);
+            }
 
-        $project->update([
-            'status' => $validated['status']
-        ]);
+            $validated = $request->validate([
+                'status' => 'required|in:pending,in_progress,completed'
+            ]);
 
-        return redirect()->back()->with('success', 'Project status updated successfully');
+            $project->update([
+                'status' => $validated['status']
+            ]);
 
-    } catch (\Exception $e) {
-        return redirect()->back()->with('error', 'Failed to update project status');
+            return redirect()->back()->with('success', 'Project status updated successfully');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to update project status');
+        }
     }
-}
 }

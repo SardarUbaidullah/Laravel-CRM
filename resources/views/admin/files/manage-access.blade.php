@@ -90,10 +90,9 @@
                                 <tr class="{{ $hasAccess ? 'bg-green-50' : '' }} hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         @if(!$isUploader && !$isSuperAdmin)
-                                        <input type="checkbox" name="user_ids[]" value="{{ (int)$user->id }}"
-                                            {{ $hasAccess ? 'checked' : '' }}
-                                            class="user-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                        @else
+                                      <input type="checkbox" name="user_ids[]" value="{{ (int)$user->id }}"
+    {{ $hasAccess ? 'checked' : '' }}
+    class="user-checkbox h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">@else
                                         <div class="w-4 h-4 bg-gray-200 rounded flex items-center justify-center">
                                             <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>

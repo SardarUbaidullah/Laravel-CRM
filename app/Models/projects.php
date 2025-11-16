@@ -26,6 +26,7 @@ class Projects extends Model
         'budget',
         'client_id',
         'priority',
+        'category_id',
     ];
 
     protected $casts = [
@@ -37,6 +38,11 @@ class Projects extends Model
     ];
 
     // ==================== RELATIONSHIPS ====================
+public function category()
+{
+    return $this->belongsTo(Category::class);
+}
+
 
     public function client(): BelongsTo
     {
@@ -100,7 +106,7 @@ public function internalComments()
 }
 
 
-    
+
 
     public function discussions(): HasMany
     {

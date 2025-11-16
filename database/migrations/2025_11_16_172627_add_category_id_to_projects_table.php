@@ -11,18 +11,18 @@ return new class extends Migration
      */
     public function up()
 {
-    Schema::table('users', function (Blueprint $table) {
-        $table->string('role')->default('super_admin'); // roles: super_admin, admin, user
+    Schema::table('projects', function (Blueprint $table) {
+        $table->foreignId('category_id')->nullable()->after('manager_id')
+              ->constrained('categories')->onDelete('set null');
     });
 }
-
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
+        Schema::table('projects', function (Blueprint $table) {
             //
         });
     }

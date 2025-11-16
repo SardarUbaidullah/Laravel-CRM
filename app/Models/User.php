@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-
+use Illuminate\Notifications\Notifiable as LaravelNotifiable;
+use App\Traits\HasNotifications;
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use LaravelNotifiable, HasNotifications,HasFactory;
 
     protected $fillable = [
         'name',
@@ -18,9 +18,18 @@ class User extends Authenticatable
         'role',
         'client_id',
         'profile_photo_path',
+        'department',
+        'can_create_project',
 
     ];
+protected $attributes = [
+        'department' => 'Not Assigned',
+        'can_create_project' => false
+    ];
 
+    protected $casts = [
+        'can_create_project' => 'boolean'
+    ];
     protected $hidden = [
         'password',
         'remember_token',
@@ -34,6 +43,21 @@ class User extends Authenticatable
         ];
     }
 
+     public function scopeDistinctDepartments($query)
+    {
+        return $query->select('department')
+                    ->whereNotNull('department')
+                    ->where('department', '!=', 'Not Assigned')
+                    ->distinct()
+                    ->orderBy('department')
+                    ->pluck('department');
+    }
+    
+ public function scopeCanCreateProjects($query)
+    {
+        return $query->where('role', 'admin')
+                    ->where('can_create_project', true);
+    }
     // ==================== RELATIONSHIPS ====================
 
     public function getProfilePhotoUrlAttribute()

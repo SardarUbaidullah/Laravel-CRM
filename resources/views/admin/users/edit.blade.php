@@ -113,7 +113,32 @@
                                     @enderror
                                 </div>
                             </div>
+<!-- Department Field -->
+<div class="mb-4">
+    <label for="department" class="block text-sm font-medium text-gray-700 mb-2">Department</label>
+    <input type="text"
+           name="department"
+           id="department"
+           value="{{ old('department', $user->department) }}"
+           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
+           placeholder="Enter department">
 
+    <!-- Optional: Show department suggestions -->
+    @if($departments->count() > 0)
+    <div class="mt-2">
+        <p class="text-xs text-gray-500 mb-1">Suggestions:</p>
+        <div class="flex flex-wrap gap-2">
+            @foreach($departments as $dept)
+                <button type="button"
+                        class="department-suggestion text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded"
+                        data-department="{{ $dept }}">
+                    {{ $dept }}
+                </button>
+            @endforeach
+        </div>
+    </div>
+    @endif
+</div>
                             <!-- Client Specific Fields -->
                             <div id="client-fields" class="{{ $user->role == 'client' ? 'block' : 'hidden' }} mb-6">
                                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -294,8 +319,167 @@ document.addEventListener('DOMContentLoaded', function() {
     // Toggle on role change
     roleSelect.addEventListener('change', toggleClientFields);
 });
-</script>
 
+
+
+
+</script>
+<script>
+// Department Management
+document.addEventListener('DOMContentLoaded', function() {
+    const departmentSelect = document.getElementById('department_select');
+    const customDeptBtn = document.getElementById('custom_department_btn');
+    const customDeptInput = document.getElementById('custom_department_input');
+    const customDeptField = document.getElementById('custom_department');
+
+    // Toggle custom department input
+    if (customDeptBtn && customDeptInput) {
+        customDeptBtn.addEventListener('click', function() {
+            customDeptInput.classList.toggle('hidden');
+            if (!customDeptInput.classList.contains('hidden')) {
+                customDeptField.focus();
+                departmentSelect.value = '';
+            }
+        });
+
+        // When custom department is entered, update the select
+        customDeptField.addEventListener('input', function() {
+            if (this.value.trim() !== '') {
+                departmentSelect.value = '';
+            }
+        });
+
+        // When a department is selected from dropdown, clear custom input
+        departmentSelect.addEventListener('change', function() {
+            if (this.value !== '') {
+                customDeptField.value = '';
+                customDeptInput.classList.add('hidden');
+            }
+        });
+    }
+
+    // Professional Filters
+    const departmentFilter = document.getElementById('department_filter');
+    const roleFilter = document.getElementById('role_filter');
+    const resetFilters = document.getElementById('reset_filters');
+
+    function applyFilters() {
+        const department = departmentFilter.value;
+        const role = roleFilter.value;
+
+        let url = new URL(window.location.href);
+        let params = new URLSearchParams();
+
+        if (department !== 'all') {
+            params.set('department', department);
+        }
+
+        if (role !== 'all') {
+            params.set('role', role);
+        }
+
+        const queryString = params.toString();
+        window.location.href = queryString ? `${url.pathname}?${queryString}` : url.pathname;
+    }
+
+    if (departmentFilter) {
+        departmentFilter.addEventListener('change', applyFilters);
+    }
+
+    if (roleFilter) {
+        roleFilter.addEventListener('change', applyFilters);
+    }
+
+    if (resetFilters) {
+        resetFilters.addEventListener('click', function() {
+            window.location.href = "{{ route('users.index') }}";
+        });
+    }
+
+    // Mobile filter functionality
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    const userColumns = document.querySelectorAll('.user-column');
+
+    function initMobileView() {
+        if (window.innerWidth < 1024) {
+            userColumns.forEach((col, index) => {
+                if (index === 0) {
+                    col.style.display = 'block';
+                } else {
+                    col.style.display = 'none';
+                }
+            });
+        } else {
+            userColumns.forEach(col => {
+                col.style.display = 'block';
+            });
+        }
+    }
+
+    if (filterTabs.length > 0) {
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const role = this.getAttribute('data-role');
+
+                // Update active tab
+                filterTabs.forEach(t => {
+                    t.classList.remove('active', 'bg-purple-100', 'text-purple-800');
+                    t.classList.add('text-gray-600', 'hover:bg-gray-100');
+                });
+                this.classList.remove('text-gray-600', 'hover:bg-gray-100');
+                this.classList.add('active', 'bg-purple-100', 'text-purple-800');
+
+                // Show selected column, hide others on mobile
+                if (window.innerWidth < 1024) {
+                    userColumns.forEach(col => {
+                        if (col.getAttribute('data-role') === role) {
+                            col.style.display = 'block';
+                        } else {
+                            col.style.display = 'none';
+                        }
+                    });
+                }
+            });
+        });
+
+        window.addEventListener('resize', initMobileView);
+        initMobileView();
+    }
+});
+
+// Form submission - handle custom department
+document.querySelector('form')?.addEventListener('submit', function(e) {
+    const customDeptField = document.getElementById('custom_department');
+    const departmentSelect = document.getElementById('department_select');
+
+    if (customDeptField && customDeptField.value.trim() !== '') {
+        // Create a hidden input to submit the custom department
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'department';
+        hiddenInput.value = customDeptField.value.trim();
+        this.appendChild(hiddenInput);
+
+        // Disable the original select to avoid conflict
+        if (departmentSelect) {
+            departmentSelect.disabled = true;
+        }
+    }
+});
+
+
+// Department suggestions
+document.addEventListener('DOMContentLoaded', function() {
+    const departmentInput = document.getElementById('department');
+    const suggestions = document.querySelectorAll('.department-suggestion');
+
+    suggestions.forEach(button => {
+        button.addEventListener('click', function() {
+            departmentInput.value = this.getAttribute('data-department');
+        });
+    });
+});
+</script>
 <style>
 /* Smooth transitions for dynamic elements */
 #client-fields {

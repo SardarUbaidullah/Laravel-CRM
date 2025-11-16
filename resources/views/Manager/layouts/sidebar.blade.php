@@ -50,6 +50,20 @@
                     </span>
                 </a>
 
+
+                <!-- Files -->
+<a href="/files"
+   class="flex items-center justify-between w-full px-3 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+    <div class="flex items-center space-x-3">
+        <i class="fas fa-folder w-5 text-center text-blue-500"></i>
+        <span>Files</span>
+    </div>
+    <span class="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full font-medium">
+        {{ \App\Models\Files::whereHas('project', function($q) {
+            $q->where('manager_id', auth()->id());
+        })->count() }}
+    </span>
+</a>
                 <!-- Team -->
                 <a href="{{ route('manager.team.index') }}"
                    class="flex items-center justify-between w-full px-3 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200">

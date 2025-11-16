@@ -271,6 +271,37 @@
         .mobile-sidebar::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+
+
+
+        /* Notification animations */
+@keyframes bounce {
+    0%, 20%, 53%, 80%, 100% {
+        transform: translate3d(0,0,0);
+    }
+    40%, 43% {
+        transform: translate3d(0,-8px,0);
+    }
+    70% {
+        transform: translate3d(0,-4px,0);
+    }
+    90% {
+        transform: translate3d(0,-2px,0);
+    }
+}
+
+.notification-badge {
+    animation: bounce 1s ease infinite;
+}
+
+/* Smooth transitions */
+.notification-item {
+    transition: all 0.2s ease-in-out;
+}
+
+.notification-item:hover {
+    transform: translateX(4px);
+}
     </style>
 </head>
 
@@ -324,7 +355,12 @@
                             <a href="{{ url('/chat') }}"><i class="fas fa-comment"></i></a>
                         </button>
                     </div>
+ <div class="flex items-center space-x-4">
+                <!-- Chat Notifications -->
+                @include('components.notifications')
 
+                <!-- User menu etc -->
+            </div>
                     <!-- Divider -->
                     <div class="w-px h-6 bg-border mx-2"></div>
 
@@ -477,7 +513,7 @@
 
  <script>
 
-   
+
 
         // DOM Elements
         const tabButtons = document.querySelectorAll('.tab-btn');

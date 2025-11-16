@@ -7,6 +7,8 @@
     <title>Login - ProjectFlow</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <!-- Heroicons for eye icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script>
         tailwind.config = {
             theme: {
@@ -109,6 +111,32 @@
             color: oklch(0.145 0 0);
             font-family: "Poppins", sans-serif;
         }
+
+         .password-toggle {
+            transition: all 0.2s ease;
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle:hover {
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .password-toggle:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        /* Ensure consistent input padding with icon */
+        .password-input {
+            padding-right: 48px !important;
+        }
     </style>
 </head>
 <body class="font-poppins">
@@ -207,17 +235,14 @@
                     </div>
 
                     <!-- CTA Button -->
-                    <div class="transition-all duration-700 delay-450 ease-out translate-y-0 opacity-100">
+                    <div class="transition-all duration-700 delay-450 ease-out translate-y-0 opacity-100 ">
                         <button
-                            onclick="handleGetStarted()"
-                            class="group relative inline-flex items-center justify-center px-12 py-4 text-base font-semibold text-white bg-gradient-to-r from-primary to-accent rounded-full overflow-hidden shadow-lg hover:shadow-primary/40 transition-all duration-500 hover:scale-105 active:scale-95 cursor-pointer"
+
+                            class="group relative inline-flex items-center justify-center px-12 py-4 text-base font-semibold text-white bg-gradient-to-r from-primary to-accent rounded-full overflow-hidden shadow-lg hover:shadow-primary/40 transition-all duration-500 hover:scale-105 active:scale-95 pointer-events-none"
                         >
                             <span class="relative z-10 flex items-center space-x-2">
-                                <span>Launch Dashboard</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right group-hover:translate-x-2 transition-transform duration-200">
-                                    <path d="M5 12h14"/>
-                                    <path d="m12 5 7 7-7 7"/>
-                                </svg>
+                                <span>Login To Launch Dashboard</span>
+
                             </span>
                             <div class="absolute inset-0 bg-gradient-to-r from-primary to-accent opacity-80 blur-2xl animate-button-glow"></div>
                             <div class="absolute inset-0 bg-gradient-to-r from-primary to-accent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -303,9 +328,17 @@
                                             name="password"
                                             required
                                             autocomplete="current-password"
-                                            class="w-full px-4 py-4 bg-background/50 border border-border rounded-2xl focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 outline-none placeholder:text-muted-foreground/60 group-hover:border-primary/40 text-base"
+                                            class="w-full px-4 py-4 pr-12 bg-background/50 border border-border rounded-2xl focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 outline-none placeholder:text-muted-foreground/60 group-hover:border-primary/40 text-base"
                                             placeholder="Enter your password"
                                         />
+                                        <button
+                                            type="button"
+                                            id="password-toggle"
+                                            class="password-toggle absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground/60 hover:text-primary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-md p-1"
+                                            aria-label="Show password"
+                                        >
+                                            <i class="fas fa-eye pointer-events-none" id="password-icon" ></i>
+                                        </button>
                                         <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                                     </div>
                                 </div>
@@ -339,14 +372,7 @@
                             </form>
 
                             <!-- Register Link -->
-                            <div class="mt-6 text-center">
-                                <p class="text-sm text-muted-foreground">
-                                    Don't have an account?
-                                    <a href="{{ route('register') }}" class="text-primary hover:text-accent font-medium transition-colors duration-300 ml-1">
-                                        Sign up
-                                    </a>
-                                </p>
-                            </div>
+
 
                             <!-- Glow corners -->
                             <div class="absolute -top-2 -right-2 w-6 h-6 border-t-2 border-r-2 border-primary rounded-tr-3xl group-hover:w-8 group-hover:h-8 transition-all duration-300"></div>
@@ -373,6 +399,38 @@
             }
         }
 
+        // Password toggle functionality
+        function setupPasswordToggle() {
+            const passwordInput = document.getElementById('password');
+            const passwordToggle = document.getElementById('password-toggle');
+            const passwordIcon = document.getElementById('password-icon');
+
+            passwordToggle.addEventListener('click', function() {
+                // Toggle password visibility
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+
+                // Toggle icon
+                if (type === 'text') {
+                    passwordIcon.classList.remove('fa-eye');
+                    passwordIcon.classList.add('fa-eye-slash');
+                    passwordToggle.setAttribute('aria-label', 'Hide password');
+                } else {
+                    passwordIcon.classList.remove('fa-eye-slash');
+                    passwordIcon.classList.add('fa-eye');
+                    passwordToggle.setAttribute('aria-label', 'Show password');
+                }
+            });
+
+            // Add keyboard support (Enter or Space to toggle)
+            passwordToggle.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    passwordToggle.click();
+                }
+            });
+        }
+
         // Handle get started button click
         function handleGetStarted() {
             // Redirect to dashboard (replace with your actual URL)
@@ -382,6 +440,7 @@
         // Form validation and submission
         document.addEventListener('DOMContentLoaded', function() {
             generateParticles();
+            setupPasswordToggle();
 
             // Remove the form submission prevention
             // The form will now submit normally to Laravel's login route

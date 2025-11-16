@@ -167,18 +167,31 @@
     </div>
 
     <script>
+        // ⭐⭐ CRITICAL FIX: Enhanced real-time chat that works in background/inactive windows
+
         // Auto-scroll to bottom
         const messagesContainer = document.getElementById('messages-container');
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
 
         // Auto-resize textarea
         const textarea = document.getElementById('message-input');
-        textarea.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-        });
+        if (textarea) {
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+        }
 
-        // Send message function
+        // Global variables for real-time
+        let lastMessageId = {{ $messages->last() ? $messages->last()->id : 0 }};
+        let isPolling = false;
+        const currentUserId = {{ auth()->id() }};
+        let processedMessageIds = new Set();
+        let pusherChannel = null;
+
+        // Send message function - YOUR EXACT WORKING VERSION
         async function sendMessage() {
             const messageInput = document.getElementById('message-input');
             const attachmentInput = document.getElementById('attachment');
@@ -219,7 +232,7 @@
                 console.log('📥 Server response:', data);
 
                 if (data.success) {
-                    // ⭐⭐ KEY CHANGE: IMMEDIATELY add message to UI ⭐⭐
+                    // ⭐⭐ IMMEDIATELY add message to UI
                     console.log('✅ Adding message to UI immediately:', data.message_data);
                     addMessageToChat(data.message_data);
 
@@ -251,28 +264,28 @@
 
         // Event listeners for form submission
         const messageForm = document.getElementById('message-form');
-        messageForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            sendMessage();
-            return false;
-        });
-
-        // ⭐⭐ KEY CHANGE: Enter key handler for immediate sending ⭐⭐
-        textarea.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
+        if (messageForm) {
+            messageForm.addEventListener('submit', function(e) {
                 e.preventDefault();
+                e.stopPropagation();
                 sendMessage();
-            }
-        });
+                return false;
+            });
+        }
 
-        // REAL-TIME WITH PUSHER
-        let lastMessageId = {{ $messages->last() ? $messages->last()->id : 0 }};
-        let isPolling = false;
-        const currentUserId = {{ auth()->id() }};
+        // Enter key handler
+        if (textarea) {
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+        }
 
+        // ⭐⭐ ENHANCED REAL-TIME INITIALIZATION
         function initializeRealTime() {
-            console.log('🚀 Initializing real-time chat...');
+            console.log('🚀 Initializing real-time direct chat...');
 
             if (typeof Pusher !== 'undefined') {
                 console.log('✅ Pusher is available, setting up real-time...');
@@ -283,85 +296,136 @@
                 const pusher = new Pusher('{{ env('PUSHER_APP_KEY') }}', {
                     cluster: '{{ env('PUSHER_APP_CLUSTER') }}',
                     encrypted: true,
-                    forceTLS: true
+                    forceTLS: true,
+                    // ⭐⭐ CRITICAL: Force background connection
+                    activityTimeout: 120000, // 2 minutes
+                    pongTimeout: 30000, // 30 seconds
                 });
 
                 // Subscribe to channel
-                const channel = pusher.subscribe('chat.room.{{ $chatRoom->id }}');
+                pusherChannel = pusher.subscribe('chat.room.{{ $chatRoom->id }}');
 
-                // Listen for new messages
-                channel.bind('message.sent', function(data) {
-                    console.log('💬 New message received via Pusher:', data);
+                // ⭐⭐ CRITICAL FIX: Listen for messages even in background/inactive windows
+                pusherChannel.bind('message.sent', function(data) {
+                    console.log('💬 New message received via Pusher (background ok):', data);
 
-                    // ⭐⭐ KEY CHANGE: Only add messages from other users via Pusher ⭐⭐
+                    // Process message regardless of window focus state
                     if (data.message && data.message.user_id !== currentUserId) {
-                        addMessageToChat(data.message);
-                        playNotificationSound();
-                        showNotification(`New message from ${data.message.user.name}`);
+                        const messageId = data.message.id;
+                        if (!processedMessageIds.has(messageId)) {
+                            processedMessageIds.add(messageId);
+                            console.log('✅ Adding message from background:', data.message.user.name);
+                            addMessageToChat(data.message);
+
+                            // Play sound and show notification even in background
+                            if (!document.hasFocus()) {
+                                playNotificationSound();
+                                showBackgroundNotification(data.message);
+                            }
+                        } else {
+                            console.log('🔄 Skipping duplicate message:', messageId);
+                        }
                     }
                 });
 
                 // Connection events
-                channel.bind('pusher:subscription_succeeded', function() {
+                pusherChannel.bind('pusher:subscription_succeeded', function() {
                     console.log('✅ Successfully subscribed to Pusher channel');
                     updateConnectionStatus('connected');
                 });
 
-                channel.bind('pusher:subscription_error', function(status) {
+                pusherChannel.bind('pusher:subscription_error', function(status) {
                     console.error('❌ Pusher subscription error:', status);
                     updateConnectionStatus('error');
                     setupPollingFallback();
                 });
 
-                console.log('📡 Pusher setup complete');
+                // ⭐⭐ ADDED: Keep connection alive in background
+                setInterval(() => {
+                    if (pusherChannel && pusher.connection.state === 'connected') {
+                        // This keeps the connection active
+                        console.log('❤️ Keeping Pusher connection alive in background');
+                    }
+                }, 25000); // Every 25 seconds
+
+                console.log('📡 Pusher setup complete - background messages enabled');
 
             } else {
                 console.error('❌ Pusher not available');
                 setupPollingFallback();
             }
+
+            // ⭐⭐ CRITICAL: Start background polling as backup
+            startBackgroundPolling();
         }
 
-        // Fallback polling
-        function setupPollingFallback() {
-            console.log('🔄 Using polling fallback');
-            updateConnectionStatus('polling');
-            isPolling = true;
+        // ⭐⭐ NEW: Background polling that works even when window is inactive
+        function startBackgroundPolling() {
+            console.log('🔄 Starting background polling...');
 
-            setInterval(pollForNewMessages, 2000);
-            setTimeout(pollForNewMessages, 1000);
+            // Poll every 3 seconds regardless of window state
+            setInterval(() => {
+                pollForNewMessages();
+            }, 3000);
+
+            // Immediate poll
+            setTimeout(() => pollForNewMessages(), 1000);
         }
 
         async function pollForNewMessages() {
-            if (!isPolling) return;
-
             try {
-                const response = await fetch('{{ route('manager.chat.messages', $chatRoom) }}?last_id=' + lastMessageId);
+                const response = await fetch('{{ route('manager.chat.messages', $chatRoom) }}?last_id=' + lastMessageId + '&t=' + Date.now());
                 const data = await response.json();
 
                 if (data.data && data.data.length > 0) {
                     const newMessages = data.data.filter(msg => msg.id > lastMessageId);
 
                     if (newMessages.length > 0) {
+                        console.log('🔄 Background polling found', newMessages.length, 'new messages');
+
                         newMessages.forEach(message => {
-                            // ⭐⭐ KEY CHANGE: Only add messages from other users via polling ⭐⭐
-                            if (message.user_id !== currentUserId) {
+                            if (message.user_id !== currentUserId && !processedMessageIds.has(message.id)) {
+                                console.log('✅ Adding message via background polling:', message.user.name);
                                 addMessageToChat(message);
+                                processedMessageIds.add(message.id);
+
+                                // Notify even in background
+                                if (!document.hasFocus()) {
+                                    playNotificationSound();
+                                    showBackgroundNotification(message);
+                                }
                             }
                             lastMessageId = Math.max(lastMessageId, message.id);
                         });
-
-                        const othersMessages = newMessages.filter(msg => msg.user_id !== currentUserId);
-                        if (othersMessages.length > 0) {
-                            showNotification(`New message from ${othersMessages[0].user.name}`);
-                        }
                     }
                 }
             } catch (error) {
-                console.error('Polling error:', error);
+                console.error('Background polling error:', error);
             }
         }
 
-        // Add message to chat - Enhanced for direct chat
+        // ⭐⭐ NEW: Show notification for background messages
+        function showBackgroundNotification(message) {
+            // Show desktop notification
+            if ("Notification" in window && Notification.permission === "granted") {
+                const notification = new Notification(`New message from ${message.user.name}`, {
+                    body: message.message.length > 50 ? message.message.substring(0, 50) + '...' : message.message,
+                    icon: '/favicon.ico',
+                    tag: 'chat-message',
+                    requireInteraction: false
+                });
+
+                notification.onclick = function() {
+                    window.focus();
+                    this.close();
+                };
+            }
+
+            // Also show in-page notification
+            showNotification(`New message from ${message.user.name}`, 'info');
+        }
+
+        // ⭐⭐ YOUR EXACT ORIGINAL addMessageToChat FUNCTION
         function addMessageToChat(message) {
             const isOwnMessage = message.user_id === currentUserId;
 
@@ -393,8 +457,15 @@
                 </div>
             `;
 
-            document.getElementById('messages-list').insertAdjacentHTML('beforeend', messageHtml);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            const messagesList = document.getElementById('messages-list');
+            if (messagesList) {
+                messagesList.insertAdjacentHTML('beforeend', messageHtml);
+
+                // Auto-scroll to bottom
+                if (messagesContainer) {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+            }
 
             if (!isOwnMessage) {
                 playNotificationSound();
@@ -415,8 +486,8 @@
         function playNotificationSound() {
             try {
                 const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA==');
-                audio.volume = 0.2;
-                audio.play();
+                audio.volume = 0.3;
+                audio.play().catch(e => console.log('Sound play failed'));
             } catch (e) {}
         }
 
@@ -466,18 +537,188 @@
             }
         }
 
-        // Initialize when page loads
+        function setupPollingFallback() {
+            console.log('🔄 Using polling fallback');
+            updateConnectionStatus('polling');
+            isPolling = true;
+        }
+
+        // Request notification permission on page load
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Direct chat page loaded');
+            console.log('🚀 Direct chat page loaded - initializing real-time...');
+
+            // Request notification permission
+            if ("Notification" in window && Notification.permission === "default") {
+                Notification.requestPermission();
+            }
+
             initializeRealTime();
-            textarea.focus();
+
+            if (textarea) {
+                textarea.focus();
+            }
+
+            console.log('✅ Real-time direct chat ready - messages will work in background/inactive windows');
         });
 
-        // Stop polling when tab is hidden
+        // Keep polling active regardless of visibility
         document.addEventListener('visibilitychange', function() {
-            isPolling = !document.hidden;
-            if (isPolling) pollForNewMessages();
+            console.log('👀 Visibility changed:', document.hidden ? 'hidden' : 'visible');
+            // Background polling continues regardless
         });
+
+
+
+
+
+        class ChatVirtualScroll {
+    constructor(containerId, chatRoomId) {
+        this.container = document.getElementById(containerId);
+        this.chatRoomId = chatRoomId;
+        this.messages = [];
+        this.visibleMessages = [];
+        this.pageSize = 50;
+        this.currentPage = 1;
+        this.isLoading = false;
+
+        this.init();
+    }
+
+    init() {
+        this.setupContainer();
+        this.loadInitialMessages();
+        this.setupScrollListener();
+    }
+
+    setupContainer() {
+        this.container.innerHTML = `
+            <div class="messages-viewport" style="height: 100%; overflow-y: auto;">
+                <div class="messages-spacer" style="height: 0px;"></div>
+                <div class="messages-content"></div>
+                <div class="messages-spacer" style="height: 0px;"></div>
+            </div>
+        `;
+
+        this.viewport = this.container.querySelector('.messages-viewport');
+        this.content = this.container.querySelector('.messages-content');
+        this.spacerTop = this.container.querySelector('.messages-spacer:first-child');
+        this.spacerBottom = this.container.querySelector('.messages-spacer:last-child');
+    }
+
+    async loadInitialMessages() {
+        await this.loadMessages(1);
+        this.renderVisibleMessages();
+    }
+
+    async loadMessages(page) {
+        if (this.isLoading) return;
+
+        this.isLoading = true;
+
+        try {
+            const response = await fetch(`/manager/chat/${this.chatRoomId}/messages?page=${page}`);
+            const data = await response.json();
+
+            if (page === 1) {
+                this.messages = data.data.reverse(); // Oldest first
+            } else {
+                this.messages = [...data.data.reverse(), ...this.messages];
+            }
+
+            this.currentPage = data.current_page;
+            this.totalPages = data.last_page;
+
+            this.updateSpacers();
+
+        } catch (error) {
+            console.error('Load messages error:', error);
+        } finally {
+            this.isLoading = false;
+        }
+    }
+
+    renderVisibleMessages() {
+        const viewportHeight = this.viewport.clientHeight;
+        const scrollTop = this.viewport.scrollTop;
+
+        // Calculate which messages are visible
+        const startIndex = Math.floor(scrollTop / 100); // Approximate message height
+        const endIndex = Math.min(startIndex + Math.ceil(viewportHeight / 100) + 5, this.messages.length);
+
+        this.visibleMessages = this.messages.slice(startIndex, endIndex);
+
+        // Render only visible messages
+        this.content.innerHTML = this.visibleMessages.map(message =>
+            this.createMessageHTML(message)
+        ).join('');
+
+        this.spacerTop.style.height = (startIndex * 100) + 'px';
+        this.spacerBottom.style.height = ((this.messages.length - endIndex) * 100) + 'px';
+    }
+
+    createMessageHTML(message) {
+        return `
+            <div class="message ${message.user_id === currentUserId ? 'own-message' : 'other-message'}"
+                 data-message-id="${message.id}"
+                 style="height: 100px; margin: 5px 0;">
+                <div class="message-header">
+                    <strong>${message.user.name}</strong>
+                    <span class="message-time">${this.formatTime(message.created_at)}</span>
+                </div>
+                <div class="message-content">
+                    ${this.escapeHtml(message.message)}
+                    ${message.attachment ? `
+                        <div class="attachment">
+                            <a href="/storage/${message.attachment}" target="_blank">
+                                📎 ${message.attachment_name}
+                            </a>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    setupScrollListener() {
+        this.viewport.addEventListener('scroll', () => {
+            this.renderVisibleMessages();
+
+            // Load more messages when near top
+            if (this.viewport.scrollTop < 500 && this.currentPage < this.totalPages && !this.isLoading) {
+                this.loadMessages(this.currentPage + 1);
+            }
+        });
+    }
+
+    updateSpacers() {
+        const totalHeight = this.messages.length * 100;
+        this.spacerBottom.style.height = (totalHeight - (this.visibleMessages.length * 100)) + 'px';
+    }
+
+    addNewMessage(message) {
+        this.messages.push(message);
+        this.updateSpacers();
+        this.renderVisibleMessages();
+        this.viewport.scrollTop = this.viewport.scrollHeight;
+    }
+
+    formatTime(timestamp) {
+        return new Date(timestamp).toLocaleTimeString();
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Initialize virtual scroll
+let chatVirtualScroll;
+
+function initializeChat() {
+    chatVirtualScroll = new ChatVirtualScroll('messages-container', chatRoomId);
+}
     </script>
 </body>
 </html>

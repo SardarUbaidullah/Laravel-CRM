@@ -4,38 +4,35 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class ChatMessageSent implements ShouldBroadcastNow
+class NotificationSent implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $messageData;
+    public $notification;
 
-    public function __construct($messageData)
+    public function __construct($notification)
     {
-        $this->messageData = $messageData;
+        $this->notification = $notification;
     }
 
     public function broadcastOn()
     {
-        // ✅ USE PresenceChannel for both direct and group chats
-        return new PresenceChannel('chat.room.' . $this->messageData['chat_room_id']);
+        return new Channel('user.' . $this->notification['notifiable_id']);
     }
 
     public function broadcastAs()
     {
-        // ✅ USE SAME EVENT NAME FOR BOTH
-        return 'message.sent';
+        return 'notification.sent';
     }
 
     public function broadcastWith()
     {
         return [
-            'message' => $this->messageData
+            'notification' => $this->notification
         ];
     }
 }
