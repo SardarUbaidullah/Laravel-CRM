@@ -14,7 +14,7 @@ class Category extends Model
     // Relationship with Projects
     public function projects()
     {
-        return $this->hasMany(Project::class);
+        return $this->hasMany(Projects::class);
     }
 
 

@@ -45,44 +45,7 @@ Route::prefix('notifications')->group(function () {
 
 
 // Add this temporary route for testing
-Route::get('/debug-notifications', function() {
-    $user = auth()->user();
 
-    if (!$user) {
-        return response()->json(['error' => 'User not authenticated'], 401);
-    }
-
-    $notifications = $user->notifications()
-        ->latest()
-        ->take(20)
-        ->get()
-        ->map(function($notification) {
-            // Safely handle data - whether it's string or array
-            $data = $notification->data;
-            if (is_string($data)) {
-                $data = json_decode($data, true);
-            }
-
-            return [
-                'id' => $notification->id,
-                'type' => $notification->type,
-                'data' => $data,
-                'read_at' => $notification->read_at,
-                'created_at' => $notification->created_at->toISOString(),
-            ];
-        });
-
-    $unreadCount = $user->unreadNotifications()->count();
-
-    return response()->json([
-        'success' => true,
-        'user_id' => $user->id,
-        'user_name' => $user->name,
-        'unread_count' => $unreadCount,
-        'total_notifications' => $user->notifications()->count(),
-        'notifications' => $notifications
-    ]);
-});
 Route::middleware('auth')->group(function () {
     // Custom Profile Routes - Use Blade template instead of Inertia
     Route::get('/profile', function () {

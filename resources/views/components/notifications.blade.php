@@ -97,10 +97,7 @@
         <!-- Footer -->
         <div class="bg-gray-50 px-4 py-3 border-t border-gray-200 rounded-b-lg">
             <div class="flex justify-between items-center">
-                <a href="{{ route('notifications.index') ?? '#' }}"
-                   class="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                    View All
-                </a>
+                
                 <button @click="clearAll" class="text-xs text-gray-500 hover:text-gray-700">
                     Clear All
                 </button>

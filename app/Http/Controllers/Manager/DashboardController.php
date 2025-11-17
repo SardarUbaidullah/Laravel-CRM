@@ -7,7 +7,7 @@ use App\Models\Projects;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Tasks;
 use App\Models\User;
-use App\Models\milestones;
+use App\Models\Milestones;
 use App\Models\Comment;
 use App\Models\TimeLogs;
 use App\Models\TaskSubtasks;

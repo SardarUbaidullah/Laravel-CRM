@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\teams;
+use App\Models\Teams;
 use Illuminate\Http\Request;
 
 class TeamController extends Controller
@@ -10,7 +10,7 @@ class TeamController extends Controller
     // Show all teams
     public function index()
     {
-        $teams = teams::all();
+        $teams = Teams::all();
         return view('admin.teams.index', compact('teams'));
     }
 
@@ -28,7 +28,7 @@ class TeamController extends Controller
             'owner_id' => 'required|exists:users,id'
         ]);
 
-        teams::create($request->all());
+        Teams::create($request->all());
 
         return redirect()->route('admin.teams.index')->with('success', 'Team created successfully.');
     }
@@ -36,14 +36,14 @@ class TeamController extends Controller
     // Show single team
     public function show($id)
     {
-        $team = teams::findOrFail($id);
+        $team = Teams::findOrFail($id);
         return view('admin.teams.show', compact('team'));
     }
 
     // Show edit form
     public function edit($id)
     {
-        $team = teams::findOrFail($id);
+        $team = Teams::findOrFail($id);
         return view('admin.teams.edit', compact('team'));
     }
 
@@ -55,7 +55,7 @@ class TeamController extends Controller
             'owner_id' => 'required|exists:users,id'
         ]);
 
-        $team = teams::findOrFail($id);
+        $team = Teams::findOrFail($id);
         $team->update($request->all());
 
         return redirect()->route('admin.teams.index')->with('success', 'Team updated successfully.');
@@ -64,7 +64,7 @@ class TeamController extends Controller
     // Delete team
     public function destroy($id)
     {
-        $team = teams::findOrFail($id);
+        $team = Teams::findOrFail($id);
         $team->delete();
 
         return redirect()->route('admin.teams.index')->with('success', 'Team deleted successfully.');

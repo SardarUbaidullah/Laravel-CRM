@@ -13,10 +13,14 @@
                         Welcome back, {{ Auth::user()->name }}! Here's your work summary.
                     </p>
                 </div>
+
                 <div class="flex items-center space-x-3">
+                    <!-- Notification Bell -->
+                    @include('components.notifications')
+
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                         <i class="fas fa-user-shield mr-1.5 text-xs"></i>
-                        {{ ucfirst(Auth::user()->role) }}
+                        Team Member
                     </span>
                     <span class="text-sm text-gray-500">{{ now()->format('l, F j, Y') }}</span>
                 </div>

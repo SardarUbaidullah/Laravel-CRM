@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ChatRoom;
 use App\Models\ChatMessage;
 use App\Models\Projects;
+use App\Models\Tasks;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -96,52 +97,62 @@ class ChatController extends Controller
     }
 
     public function projectChat(Projects $project)
-    {
-        $user = auth()->user();
+{
+    $user = auth()->user();
 
-        // Role-based access control
-        if ($user->role === 'user') {
-            // Check if user is team member of this project
+    // Role-based access control
+    if ($user->role === 'user') {
+        // Check if user is team member OR has tasks assigned in this project
+        $isTeamMember = $project->teamMembers->contains('id', $user->id);
+        $hasTasksInProject = Tasks::where('project_id', $project->id)
+                                ->where('assigned_to', $user->id)
+                                ->exists();
+
+        if (!$isTeamMember && !$hasTasksInProject) {
+            abort(403, 'Access denied. You are not a team member of this project and have no tasks assigned.');
+        }
+
+        // If user has tasks but is not a team member, add them as team member
+        if (!$isTeamMember && $hasTasksInProject) {
+            $project->teamMembers()->syncWithoutDetaching([$user->id]);
+        }
+    } else {
+        // Original access check for admin/super_admin
+        if (!$user->canAccessProject($project)) {
             if (!$project->teamMembers->contains('id', $user->id)) {
-                abort(403, 'Access denied. You are not a team member of this project.');
-            }
-        } else {
-            // Original access check for admin/super_admin
-            if (!$user->canAccessProject($project)) {
-                if (!$project->teamMembers->contains('id', $user->id)) {
-                    $project->teamMembers()->syncWithoutDetaching([$user->id]);
-                }
+                $project->teamMembers()->syncWithoutDetaching([$user->id]);
             }
         }
-
-        // Find or create project chat room
-        $chatRoom = ChatRoom::firstOrCreate(
-            ['project_id' => $project->id, 'type' => 'project'],
-            [
-                'name' => $project->name . ' Chat',
-                'description' => 'Project discussion group',
-                'created_by' => $user->id
-            ]
-        );
-
-        // Add current user to participants if not already
-        $chatRoom->participants()->firstOrCreate(['user_id' => $user->id]);
-
-        // Add all project members to chat room
-        $allMembers = $project->getAllMembers();
-        foreach ($allMembers as $member) {
-            $chatRoom->participants()->firstOrCreate(['user_id' => $member->id]);
-        }
-
-        $messages = $chatRoom->messages()
-            ->with('user')
-            ->orderBy('created_at', 'asc')
-            ->paginate(50);
-
-        $this->markMessagesAsRead($chatRoom, $user);
-
-        return view('manager.chat.project-chat', compact('project', 'chatRoom', 'messages'));
     }
+
+    // Find or create project chat room
+    $chatRoom = ChatRoom::firstOrCreate(
+        ['project_id' => $project->id, 'type' => 'project'],
+        [
+            'name' => $project->name . ' Chat',
+            'description' => 'Project discussion group',
+            'created_by' => $user->id
+        ]
+    );
+
+    // Add current user to participants if not already
+    $chatRoom->participants()->firstOrCreate(['user_id' => $user->id]);
+
+    // Add all project members to chat room
+    $allMembers = $project->getAllMembers();
+    foreach ($allMembers as $member) {
+        $chatRoom->participants()->firstOrCreate(['user_id' => $member->id]);
+    }
+
+    $messages = $chatRoom->messages()
+        ->with('user')
+        ->orderBy('created_at', 'asc')
+        ->paginate(50);
+
+    $this->markMessagesAsRead($chatRoom, $user);
+
+    return view('manager.chat.project-chat', compact('project', 'chatRoom', 'messages'));
+}
 
     public function directChat(User $user)
     {
@@ -469,7 +480,7 @@ private function sendProjectMessageNotification(ChatRoom $chatRoom, $sender, $me
 
     $messages = $chatRoom->messages()
         ->select(['id', 'message', 'user_id', 'attachment', 'attachment_name', 'created_at', 'read_at'])
-        ->with(['user:id,name,role']) 
+        ->with(['user:id,name,role'])
         ->orderBy('created_at', 'desc')
         ->paginate(100);
 
