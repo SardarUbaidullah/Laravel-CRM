@@ -8,7 +8,7 @@
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
+                <h1 class="text-3xl font-bold text-gray-900" aria-label="Dashboard Overview">Dashboard Overview</h1>
                 <p class="text-gray-600 mt-2 flex items-center">
                     <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
                     Welcome back, {{ auth()->user()->name }}
@@ -53,12 +53,12 @@
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-sm font-medium text-purple-700 mb-2">Completed Tasks</h3>
-                    <p class="text-3xl font-bold text-purple-900">{{ $projects->sum('completed_tasks_count') }}</p>
                     @php
-                        $completionRate = $projects->sum('tasks_count') > 0
-                            ? round(($projects->sum('completed_tasks_count') / $projects->sum('tasks_count')) * 100, 1)
-                            : 0;
+                        $totalTasks = $projects->sum('tasks_count');
+                        $completedTasks = $projects->sum('completed_tasks_count');
+                        $completionRate = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100, 1) : 0;
                     @endphp
+                    <p class="text-3xl font-bold text-purple-900">{{ $completedTasks }}</p>
                     <p class="text-xs text-purple-600 mt-1">{{ $completionRate }}% completion rate</p>
                 </div>
                 <div class="w-14 h-14 bg-white bg-opacity-50 rounded-xl flex items-center justify-center">
@@ -94,29 +94,31 @@
                             </div>
                             <div>
                                 <h4 class="font-semibold text-gray-900 text-lg">{{ $project->name }}</h4>
-                                <p class="text-sm text-gray-500">Manager: {{ $project->manager->name }}</p>
+                                <p class="text-sm text-gray-500">Manager: {{ $project->manager->name ?? 'Not assigned' }}</p>
                             </div>
                         </div>
                         <span class="px-3 py-1 text-xs font-medium rounded-full
                             @if($project->status == 'completed') bg-green-100 text-green-800 border border-green-200
                             @elseif($project->status == 'in_progress') bg-blue-100 text-blue-800 border border-blue-200
                             @else bg-gray-100 text-gray-800 border border-gray-200 @endif">
-                            {{ ucfirst(str_replace('_', ' ', $project->status)) }}
+                            {{ ucfirst(str_replace('_', ' ', $project->status ?? 'pending')) }}
                         </span>
                     </div>
 
-                    <p class="text-gray-600 mb-4 text-sm leading-relaxed">{{ Str::limit($project->description, 120) }}</p>
+                    <p class="text-gray-600 mb-4 text-sm leading-relaxed">{{ Str::limit($project->description ?? 'No description available', 120) }}</p>
 
                     <!-- Enhanced Progress -->
                     <div class="mb-4">
                         <div class="flex justify-between text-sm text-gray-600 mb-2">
                             <span class="font-medium">Project Progress</span>
-                            <span class="font-semibold">{{ $project->completed_tasks_count }}/{{ $project->tasks_count }} tasks</span>
+                            @php
+                                $tasks_count = $project->tasks_count ?? 0;
+                                $completed_tasks_count = $project->completed_tasks_count ?? 0;
+                                $progress = $tasks_count > 0 ? ($completed_tasks_count / $tasks_count) * 100 : 0;
+                            @endphp
+                            <span class="font-semibold">{{ $completed_tasks_count }}/{{ $tasks_count }} tasks</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                            @php
-                                $progress = $project->tasks_count > 0 ? ($project->completed_tasks_count / $project->tasks_count) * 100 : 0;
-                            @endphp
                             <div class="bg-gradient-to-r from-green-500 to-emerald-600 h-2.5 rounded-full progress-bar"
                                  style="width: {{ $progress }}%"></div>
                         </div>
@@ -169,6 +171,7 @@
                     <div class="border border-gray-200 rounded-xl p-4 mb-4 last:mb-0 hover:border-orange-300 transition-all duration-200">
                         <div class="flex justify-between items-start mb-3">
                             <h4 class="font-medium text-gray-900 text-sm leading-tight">{{ $task->title }}</h4>
+                            @if($task->due_date)
                             <span class="text-xs px-2 py-1 rounded-full font-medium flex items-center space-x-1
                                 @if($task->due_date->diffInDays(now()) <= 2) bg-red-100 text-red-800 border border-red-200
                                 @elseif($task->due_date->diffInDays(now()) <= 7) bg-yellow-100 text-yellow-800 border border-yellow-200
@@ -176,11 +179,16 @@
                                 <i class="fas fa-clock text-xs"></i>
                                 <span>{{ $task->due_date->format('M d') }}</span>
                             </span>
+                            @endif
                         </div>
-                        <p class="text-sm text-gray-600 mb-3 leading-relaxed">{{ Str::limit($task->description, 80) }}</p>
+                        <p class="text-sm text-gray-600 mb-3 leading-relaxed">{{ Str::limit($task->description ?? 'No description', 80) }}</p>
                         <div class="flex justify-between items-center text-xs text-gray-500">
                             <span class="bg-gray-100 px-2 py-1 rounded">Project: {{ $task->project->name }}</span>
+                            @if($task->due_date)
                             <span>{{ $task->due_date->diffForHumans() }}</span>
+                            @else
+                            <span>No due date</span>
+                            @endif
                         </div>
                     </div>
                     @empty
@@ -215,14 +223,26 @@
                                 <i class="fas fa-comment text-white text-sm"></i>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-sm text-gray-900 mb-1 leading-tight">
-                                    <span class="font-semibold text-blue-600">{{ $activity->user->name }}</span> commented on project
-                                </p>
-                                <p class="text-sm text-gray-600 mb-2 leading-relaxed">{{ Str::limit($activity->content, 90) }}</p>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">{{ $activity->created_at->diffForHumans() }}</span>
-                                    <span class="text-xs text-primary-600 font-medium">View →</span>
-                                </div>
+                                @if(is_array($activity))
+                                    <p class="text-sm text-gray-900 mb-1 leading-tight">
+                                        {!! $activity['message'] ?? 'Activity update' !!}
+                                    </p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                            {{ isset($activity['time']) ? $activity['time']->diffForHumans() : 'Recently' }}
+                                        </span>
+                                        <span class="text-xs text-primary-600 font-medium">View ?</span>
+                                    </div>
+                                @else
+                                    <p class="text-sm text-gray-900 mb-1 leading-tight">
+                                        <span class="font-semibold text-blue-600">{{ $activity->user->name ?? 'User' }}</span> commented on project
+                                    </p>
+                                    <p class="text-sm text-gray-600 mb-2 leading-relaxed">{{ Str::limit($activity->content ?? 'No content', 90) }}</p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">{{ $activity->created_at->diffForHumans() }}</span>
+                                        <span class="text-xs text-primary-600 font-medium">View ?</span>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -240,6 +260,11 @@
     </div>
 </div>
 
+<!-- Loading Indicator -->
+<div id="loading-indicator" class="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50 hidden">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+</div>
+
 <style>
     .card-hover {
         transition: all 0.3s ease;
@@ -252,4 +277,25 @@
         transition: width 0.8s ease-in-out;
     }
 </style>
+
+<script>
+    // Simple loading state management
+    document.addEventListener('DOMContentLoaded', function() {
+        const links = document.querySelectorAll('a');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        
+        links.forEach(link => {
+            link.addEventListener('click', function() {
+                if (this.getAttribute('href') && !this.getAttribute('href').startsWith('#')) {
+                    loadingIndicator.classList.remove('hidden');
+                }
+            });
+        });
+        
+        // Hide loading indicator when page fully loads
+        window.addEventListener('load', function() {
+            loadingIndicator.classList.add('hidden');
+        });
+    });
+</script>
 @endsection

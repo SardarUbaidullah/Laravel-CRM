@@ -223,12 +223,13 @@ class ProjectController extends Controller
         $project = Projects::where('manager_id', auth()->id())
                           ->with(['teamMembers', 'category'])
                           ->findOrFail($id);
+        $managers = User::where('role', 'admin')->orWhere('role', 'manager')->get();
 
         $clients = Client::active()->get();
         $teamMembers = User::where('role', 'user')->get();
         $categories = Category::where('is_active', true)->get();
 
-        return view('manager.projects.edit', compact('project', 'clients', 'teamMembers', 'categories'));
+        return view('manager.projects.edit', compact('project', 'clients', 'teamMembers', 'managers', 'categories'));
     }
 
     // PUT /projects/{id}

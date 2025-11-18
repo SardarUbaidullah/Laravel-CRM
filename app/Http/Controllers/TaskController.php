@@ -44,7 +44,7 @@ class TaskController extends Controller
             $milestones = Milestones::where('project_id', $request->project_id)->get();
         }
 
-        return view('admin.tasks.index', compact('tasks', 'projects', 'taskCounts', 'milestones'));
+        return view('admin.Tasks.index', compact('tasks', 'projects', 'taskCounts', 'milestones'));
     }
 
     public function pendingTasks(Request $request)
@@ -60,7 +60,7 @@ class TaskController extends Controller
         $tasks = $query->latest()->get();
         $projects = Projects::all();
 
-        return view('admin.tasks.pending', compact('tasks', 'projects'));
+        return view('admin.Tasks.pending', compact('tasks', 'projects'));
     }
 
     public function completedTasks(Request $request)
@@ -76,7 +76,7 @@ class TaskController extends Controller
         $tasks = $query->latest()->get();
         $projects = Projects::all();
 
-        return view('admin.tasks.completed', compact('tasks', 'projects'));
+        return view('admin.Tasks.completed', compact('tasks', 'projects'));
     }
 
     // GET /tasks/create
@@ -92,7 +92,7 @@ class TaskController extends Controller
             $milestones = Milestones::where('project_id', $selectedProject)->get();
         }
 
-        return view('admin.tasks.create', compact('projects', 'users', 'selectedProject', 'milestones'));
+        return view('admin.Tasks.create', compact('projects', 'users', 'selectedProject', 'milestones'));
     }
 
     // POST /tasks
@@ -140,7 +140,7 @@ class TaskController extends Controller
             return redirect()->route('tasks.index')->with('error', 'Task not found');
         }
 
-        return view('admin.tasks.show', compact('task'));
+        return view('admin.Tasks.show', compact('task'));
     }
 
     // GET /tasks/{id}/edit
@@ -156,7 +156,7 @@ class TaskController extends Controller
 
         $milestones = Milestones::where('project_id', $task->project_id)->get();
 
-        return view('admin.tasks.edit', compact('task', 'projects', 'users', 'milestones'));
+        return view('admin.Tasks.edit', compact('task', 'projects', 'users', 'milestones'));
     }
 
     // PUT /tasks/{id}

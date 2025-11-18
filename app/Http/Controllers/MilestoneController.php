@@ -479,7 +479,7 @@ class MilestoneController extends Controller
             'milestone_title' => $milestone->title,
             'project_id' => $project->id,
             'project_name' => $project->name,
-            'due_date' => $milestone->due_date ? $milestone->due_date->format('M d, Y') : 'Not set',
+            'due_date' => $milestone->due_date ? \Carbon\Carbon::parse($milestone->due_date)->format('M d, Y') : 'Not set',
             'created_by' => $createdBy->name,
         ];
 
@@ -510,8 +510,8 @@ class MilestoneController extends Controller
 
         // Check for due date change
         if ($oldDueDate != $milestone->due_date) {
-            $oldDueDateFormatted = $oldDueDate ? $oldDueDate->format('M d, Y') : 'Not set';
-            $newDueDateFormatted = $milestone->due_date ? $milestone->due_date->format('M d, Y') : 'Not set';
+          $oldDueDateFormatted = $oldDueDate ? \Carbon\Carbon::parse($oldDueDate)->format('M d, Y') : 'Not set';
+$newDueDateFormatted = $milestone->due_date ? \Carbon\Carbon::parse($milestone->due_date)->format('M d, Y') : 'Not set';
             $changes[] = "due date changed from {$oldDueDateFormatted} to {$newDueDateFormatted}";
         }
 
@@ -704,7 +704,7 @@ class MilestoneController extends Controller
                 'milestone_title' => $milestone->title,
                 'project_id' => $project->id,
                 'project_name' => $project->name,
-                'due_date' => $milestone->due_date->format('M d, Y'),
+                'due_date' => $milestone->due_date ? \Carbon\Carbon::parse($milestone->due_date)->format('M d, Y') : 'Not set',
                 'days_overdue' => $daysOverdue,
             ];
 

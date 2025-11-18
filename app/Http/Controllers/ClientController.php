@@ -16,32 +16,47 @@ class ClientController extends Controller
     {
         $client = auth()->user();
 
-        $projects = Projects::where('client_id', $client->client_id)
-            ->withCount(['tasks', 'completedTasks'])
-            ->with(['manager'])
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
-
+         $projects = Projects::where('client_id', $client->client_id)
+        ->with(['manager'])
+        ->withCount([
+            'tasks',
+            'tasks as completed_tasks_count' => function($query) {
+                $query->where('status', 'done'); // or 'completed' depending on your status values
+            }
+        ])
+        ->orderBy('created_at', 'desc')
+        ->take(5)
+        ->get();
         $recentActivities = $this->getRecentActivities($client);
         $upcomingDeadlines = $this->getUpcomingDeadlines($client);
 
-        return view('client.dashboard', compact('projects', 'recentActivities', 'upcomingDeadlines'));
+        return view('Client.dashboard', compact('projects', 'recentActivities', 'upcomingDeadlines'));
     }
 
-    public function projects()
-    {
-        $client = auth()->user();
-        $projects = Projects::where('client_id', $client->client_id)
-            ->with(['manager'])
-            ->withCount(['tasks', 'completedTasks'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+   public function projects()
+{
+    $client = auth()->user();
+    
+    $projects = Projects::where('client_id', $client->client_id)
+        ->with(['manager', 'teamMembers'])
+        ->withCount([
+            'tasks',
+            'tasks as completed_tasks_count' => function($query) {
+                $query->where('status', 'done'); // or 'completed' based on your system
+            }
+        ])
+        ->orderBy('created_at', 'desc')
+        ->get();
 
-        return view('client.projects.index', compact('projects'));
+    // Calculate total team members across all projects
+    $totalTeamMembers = 0;
+    foreach ($projects as $project) {
+        $totalTeamMembers += $project->teamMembers ? $project->teamMembers->count() : 0;
     }
 
-   public function projectShow(Projects $project)
+    return view('Client.projects.index', compact('projects', 'totalTeamMembers'));
+}
+  public function projectShow(Projects $project)
 {
     $client = auth()->user();
 
@@ -51,17 +66,14 @@ class ClientController extends Controller
 
     $project->load([
         'manager',
-        'tasks.assignedTo', // Load assignedTo for tasks
-        'tasks.comments.user', // Load comments with user for each task
-        'files' => function($query) {
-            $query->orderBy('created_at', 'desc');
-        },
-        'comments.user' // Load project comments with user
+        'tasks.assignedTo',
+        'tasks.comments.user',
+        'files',
+        'comments.user'
     ]);
 
-    return view('client.projects.show', compact('project'));
+    return view('Client.projects.show', compact('project'));
 }
-
     public function addProjectComment(Request $request, Projects $project)
     {
         $client = auth()->user();
@@ -123,29 +135,46 @@ class ClientController extends Controller
         return Storage::disk('public')->download($file->file_path, $file->original_name);
     }
 
-    private function getRecentActivities($client)
-    {
-        $projectComments = Comment::whereHasMorph(
-            'commentable',
-            [Projects::class],
-            function($query) use ($client) {
-                $query->where('client_id', $client->client_id);
-            }
-        )->with(['user', 'commentable'])->latest()->limit(5)->get();
+   private function getRecentActivities($client)
+{
+    // Get project comments
+    $projectComments = Comment::whereHasMorph(
+        'commentable',
+        [Projects::class],
+        function($query) use ($client) {
+            $query->where('client_id', $client->client_id);
+        }
+    )->with(['user', 'commentable'])->latest()->limit(10)->get();
 
-        $taskComments = Comment::whereHasMorph(
-            'commentable',
-            [Tasks::class],
-            function($query) use ($client) {
-                $query->whereHas('project', function($q) use ($client) {
-                    $q->where('client_id', $client->client_id);
-                });
-            }
-        )->with(['user', 'commentable.project'])->latest()->limit(5)->get();
+    // Get task comments
+    $taskComments = Comment::whereHasMorph(
+        'commentable',
+        [Tasks::class],
+        function($query) use ($client) {
+            $query->whereHas('project', function($q) use ($client) {
+                $q->where('client_id', $client->client_id);
+            });
+        }
+    )->with(['user', 'commentable.project'])->latest()->limit(10)->get();
 
-        return $projectComments->merge($taskComments)->sortByDesc('created_at')->take(5);
-    }
+    // Merge and format activities
+    $activities = $projectComments->merge($taskComments)
+        ->sortByDesc('created_at')
+        ->take(5)
+        ->map(function($comment) {
+            return [
+                'type' => 'comment',
+                'message' => $comment->user->name . ' commented on ' . 
+                    ($comment->commentable_type === Projects::class ? 
+                     'project "' . $comment->commentable->name . '"' : 
+                     'task "' . $comment->commentable->title . '" in project "' . $comment->commentable->project->name . '"'),
+                'time' => $comment->created_at,
+                'user' => $comment->user
+            ];
+        });
 
+    return $activities;
+}
     private function getUpcomingDeadlines($client)
     {
         return Tasks::whereHas('project', function($query) use ($client) {

@@ -8,7 +8,7 @@
             <h1 class="text-3xl font-bold text-gray-900">Tasks</h1>
             <p class="text-gray-600 mt-2">Manage all tasks across projects</p>
         </div>
-        <a href="{{ route('manager.tasks.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition duration-200 flex items-center shadow-sm">
+        <a href="{{ url('/tasks/create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition duration-200 flex items-center shadow-sm">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
             </svg>
@@ -66,7 +66,7 @@
                 </div>
                 <div class="space-y-4">
                     @foreach($tasks->where('status', 'todo') as $task)
-                    @include('admin.tasks.partials.task-card', ['task' => $task, 'status' => 'todo'])
+                    @include('admin.Tasks.partials.task-card', ['task' => $task, 'status' => 'todo'])
                     @endforeach
                 </div>
             </div>
@@ -84,7 +84,7 @@
                 </div>
                 <div class="space-y-4">
                     @foreach($tasks->where('status', 'in_progress') as $task)
-                    @include('admin.tasks.partials.task-card', ['task' => $task, 'status' => 'in_progress'])
+                    @include('admin.Tasks.partials.task-card', ['task' => $task, 'status' => 'in_progress'])
                     @endforeach
                 </div>
             </div>
@@ -102,7 +102,7 @@
                 </div>
                 <div class="space-y-4">
                     @foreach($tasks->where('status', 'done') as $task)
-                    @include('admin.tasks.partials.task-card', ['task' => $task, 'status' => 'done'])
+                    @include('admin.Tasks.partials.task-card', ['task' => $task, 'status' => 'done'])
                     @endforeach
                 </div>
             </div>

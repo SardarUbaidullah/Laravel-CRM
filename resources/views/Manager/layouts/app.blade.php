@@ -287,7 +287,7 @@
 
         <!-- Mobile Navigation -->
         <div class="p-4">
-            @include('Manager.layouts.mobile-sidebar-content')
+            @include('manager.layouts.mobile-sidebar-content')
         </div>
     </div>
 
@@ -296,7 +296,7 @@
         <!-- Desktop Sidebar -->
 
         <div class="hidden lg:!block">
-            @include('Manager.layouts.sidebar')
+            @include('manager.layouts.sidebar')
         </div>
 
 
@@ -337,7 +337,7 @@
                             <button @click="open = !open"
                                 class="flex items-center space-x-3 focus:outline-none hover:bg-gray-50 rounded-lg p-2 transition-colors duration-200">
                                 <img class="w-8 h-8 rounded-full object-cover"
-                                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop&crop=face"
+                                    src="{{ Auth::user()->profile_photo_url }}"
                                     alt="User Avatar" />
                                 <div class="text-left">
                                     <p class="text-sm font-medium text-card-foreground">

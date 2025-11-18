@@ -264,6 +264,60 @@
                         </a>
                     </div>
                 </div>
+<div class="group">
+    <button @click="openDropdown = openDropdown === 'categories' ? null : 'categories'"
+        :class="openDropdown === 'categories' ?
+            'bg-gradient-to-r from-primary/10 to-primary/5 text-sidebar-foreground border-l-2 border-primary' :
+            'text-sidebar-foreground hover:bg-sidebar-accent/80'"
+        class="flex items-center justify-between w-full px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 relative overflow-hidden">
+
+        <div class="flex items-center space-x-4">
+            <div :class="openDropdown === 'categories' ?
+                'bg-primary/20 text-primary shadow-sm' :
+                'bg-sidebar-accent text-muted-foreground group-hover:text-sidebar-foreground group-hover:bg-primary/10'"
+                class="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110">
+                <i class="fas fa-tags text-sm"></i>
+            </div>
+            <span>Categories</span>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <span class="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium shadow-sm">
+                {{ \App\Models\Category::count() }}
+            </span>
+            <i :class="openDropdown === 'categories' ?
+                'fas fa-chevron-up text-primary transform transition-transform duration-300' :
+                'fas fa-chevron-down text-muted-foreground group-hover:text-sidebar-foreground transform transition-transform duration-300'"
+                class="text-xs"></i>
+        </div>
+    </button>
+
+    <div x-show="openDropdown === 'categories'" x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 transform -translate-y-2"
+        x-transition:enter-end="opacity-100 transform translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 transform translate-y-0"
+        x-transition:leave-end="opacity-0 transform -translate-y-2"
+        class="ml-4 mt-2 space-y-1.5 border-l-2 border-primary/20 pl-4 py-2">
+        <a href="{{ route('categories.index') }}"
+            class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-white/60 transition-all duration-200 group/item">
+            <div
+                class="w-8 h-8 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center transition-all duration-200 group-hover/item:scale-110 group-hover/item:bg-purple-500 group-hover/item:text-white">
+                <i class="fas fa-list text-xs"></i>
+            </div>
+            <span>Manage Categories</span>
+        </a>
+        <a href="{{ route('categories.create') }}"
+            class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-sidebar-foreground hover:bg-white/60 transition-all duration-200 group/item">
+            <div
+                class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center transition-all duration-200 group-hover/item:scale-110 group-hover/item:bg-indigo-500 group-hover/item:text-white">
+                <i class="fas fa-plus text-xs"></i>
+            </div>
+            <span>Add Category</span>
+        </a>
+    </div>
+</div>
+
 
                 <!-- TimeLogs Dropdown -->
                 <a href="{{ route('admin.time-reports') }}"

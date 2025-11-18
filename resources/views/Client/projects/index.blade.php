@@ -11,7 +11,7 @@
                 <h1 class="text-3xl font-bold text-gray-900">Project Portfolio</h1>
                 <p class="text-gray-600 mt-2 flex items-center">
                     <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                    Your Projectswith us: {{ $projects->count() }}
+                    Your Projects with us: {{ $projects->count() }}
                 </p>
             </div>
             <div class="mt-4 lg:mt-0 flex items-center space-x-3">
@@ -67,7 +67,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm font-medium text-purple-700 mb-1">Team Members</p>
-                    <p class="text-3xl font-bold text-purple-900">{{ $projects->sum(fn($p) => $p->teamMembers->count()) }}</p>
+                    <p class="text-3xl font-bold text-purple-900">{{ $totalTeamMembers }}</p>
                 </div>
                 <div class="w-12 h-12 bg-white bg-opacity-50 rounded-xl flex items-center justify-center">
                     <i class="fas fa-users text-purple-600 text-xl"></i>
@@ -85,7 +85,7 @@
             <div class="p-6 border-b border-gray-100">
                 <div class="flex justify-between items-start mb-4">
                     <div class="flex-1 min-w-0">
-                        <h3 class="text-xl font-bold text-gray-900 truncate">{{ $project->name }}</h3>
+                        <h3 class="text-xl font-bold text-gray-900 truncate">{{ $project->name ?? 'Unnamed Project' }}</h3>
                         <p class="text-gray-500 text-sm mt-1">Created {{ $project->created_at->diffForHumans() }}</p>
                     </div>
                     <span class="px-3 py-1 text-xs font-medium rounded-full border
@@ -93,21 +93,26 @@
                         @elseif($project->status == 'in_progress') bg-blue-50 text-blue-700 border-blue-200
                         @elseif($project->status == 'on_hold') bg-yellow-50 text-yellow-700 border-yellow-200
                         @else bg-gray-50 text-gray-700 border-gray-200 @endif">
-                        {{ ucfirst(str_replace('_', ' ', $project->status)) }}
+                        {{ ucfirst(str_replace('_', ' ', $project->status ?? 'pending')) }}
                     </span>
                 </div>
 
-                <p class="text-gray-600 text-sm leading-relaxed mb-4">{{ Str::limit($project->description, 120) }}</p>
+                <p class="text-gray-600 text-sm leading-relaxed mb-4">{{ Str::limit($project->description ?? 'No description available', 120) }}</p>
 
                 <!-- Enhanced Progress Bar -->
                 <div class="mb-4">
                     <div class="flex justify-between text-sm text-gray-600 mb-2">
                         <span class="font-medium">Project Progress</span>
-                        <span class="font-semibold">{{ $project->progress }}% Complete</span>
+                        @php
+                            $tasks_count = $project->tasks_count ?? 0;
+                            $completed_tasks_count = $project->completed_tasks_count ?? 0;
+                            $progress = $tasks_count > 0 ? round(($completed_tasks_count / $tasks_count) * 100) : 0;
+                        @endphp
+                        <span class="font-semibold">{{ $progress }}% Complete</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
                         <div class="bg-gradient-to-r from-green-500 to-emerald-600 h-2.5 rounded-full transition-all duration-1000"
-                             style="width: {{ $project->progress }}%"></div>
+                             style="width: {{ $progress }}%"></div>
                     </div>
                 </div>
             </div>
@@ -117,15 +122,18 @@
                 <!-- Quick Stats -->
                 <div class="grid grid-cols-3 gap-4 mb-4">
                     <div class="text-center">
-                        <div class="text-2xl font-bold text-gray-900">{{ $project->tasks_count }}</div>
+                        <div class="text-2xl font-bold text-gray-900">{{ $tasks_count }}</div>
                         <div class="text-xs text-gray-500 font-medium">Tasks</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-2xl font-bold text-green-600">{{ $project->completed_tasks_count }}</div>
+                        <div class="text-2xl font-bold text-green-600">{{ $completed_tasks_count }}</div>
                         <div class="text-xs text-gray-500 font-medium">Done</div>
                     </div>
                     <div class="text-center">
-                        <div class="text-2xl font-bold text-blue-600">{{ $project->teamMembers->count() }}</div>
+                        @php
+                            $team_count = $project->teamMembers ? $project->teamMembers->count() : 0;
+                        @endphp
+                        <div class="text-2xl font-bold text-blue-600">{{ $team_count }}</div>
                         <div class="text-xs text-gray-500 font-medium">Team</div>
                     </div>
                 </div>
@@ -138,7 +146,7 @@
                         </div>
                         <div>
                             <span class="font-medium">Manager:</span>
-                            <span class="ml-1">{{ $project->manager->name }}</span>
+                            <span class="ml-1">{{ $project->manager->name ?? 'Not assigned' }}</span>
                         </div>
                     </div>
 
@@ -148,21 +156,31 @@
                         </div>
                         <div>
                             <span class="font-medium">Team Size:</span>
-                            <span class="ml-1">{{ $project->teamMembers->count() }} members</span>
+                            <span class="ml-1">{{ $team_count }} members</span>
                         </div>
                     </div>
 
                     @if($project->due_date)
-                    <div class="flex items-center {{ $project->isOverdue() ? 'text-red-600' : 'text-gray-600' }}">
-                        <div class="w-8 h-8 {{ $project->isOverdue() ? 'bg-red-100' : 'bg-green-100' }} rounded-lg flex items-center justify-center mr-3">
-                            <i class="fas fa-calendar {{ $project->isOverdue() ? 'text-red-600' : 'text-green-600' }} text-xs"></i>
+                    <div class="flex items-center {{ $project->due_date->isPast() ? 'text-red-600' : 'text-gray-600' }}">
+                        <div class="w-8 h-8 {{ $project->due_date->isPast() ? 'bg-red-100' : 'bg-green-100' }} rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-calendar {{ $project->due_date->isPast() ? 'text-red-600' : 'text-green-600' }} text-xs"></i>
                         </div>
                         <div>
                             <span class="font-medium">Due Date:</span>
                             <span class="ml-1">{{ $project->due_date->format('M d, Y') }}</span>
-                            @if($project->isOverdue())
+                            @if($project->due_date->isPast())
                             <span class="ml-2 text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">Overdue</span>
                             @endif
+                        </div>
+                    </div>
+                    @else
+                    <div class="flex items-center text-gray-600">
+                        <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                            <i class="fas fa-calendar text-gray-400 text-xs"></i>
+                        </div>
+                        <div>
+                            <span class="font-medium">Due Date:</span>
+                            <span class="ml-1 text-gray-400">Not set</span>
                         </div>
                     </div>
                     @endif
@@ -217,17 +235,24 @@
                     'on_hold' => $projects->where('status', 'on_hold')->count(),
                     'planning' => $projects->where('status', 'planning')->count(),
                 ];
+                
+                // Add pending count for any other statuses
+                $otherCount = $projects->count() - array_sum($statusCounts);
+                $statusCounts['pending'] = $otherCount > 0 ? $otherCount : 0;
             @endphp
 
             @foreach($statusCounts as $status => $count)
-            <div class="text-center p-4 rounded-xl border
-                @if($status == 'in_progress') border-blue-200 bg-blue-50
-                @elseif($status == 'completed') border-green-200 bg-green-50
-                @elseif($status == 'on_hold') border-yellow-200 bg-yellow-50
-                @else border-gray-200 bg-gray-50 @endif">
-                <div class="text-2xl font-bold text-gray-900 mb-1">{{ $count }}</div>
-                <div class="text-sm font-medium text-gray-600 capitalize">{{ str_replace('_', ' ', $status) }}</div>
-            </div>
+                @if($count > 0)
+                <div class="text-center p-4 rounded-xl border
+                    @if($status == 'in_progress') border-blue-200 bg-blue-50
+                    @elseif($status == 'completed') border-green-200 bg-green-50
+                    @elseif($status == 'on_hold') border-yellow-200 bg-yellow-50
+                    @elseif($status == 'planning') border-purple-200 bg-purple-50
+                    @else border-gray-200 bg-gray-50 @endif">
+                    <div class="text-2xl font-bold text-gray-900 mb-1">{{ $count }}</div>
+                    <div class="text-sm font-medium text-gray-600 capitalize">{{ str_replace('_', ' ', $status) }}</div>
+                </div>
+                @endif
             @endforeach
         </div>
     </div>
@@ -239,4 +264,21 @@
         transition: all 0.3s ease;
     }
 </style>
+
+<script>
+    // Add smooth animations
+    document.addEventListener('DOMContentLoaded', function() {
+        const projectCards = document.querySelectorAll('.transform');
+        
+        projectCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-4px)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    });
+</script>
 @endsection

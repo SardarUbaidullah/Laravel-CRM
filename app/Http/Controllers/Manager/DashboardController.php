@@ -58,7 +58,7 @@ switch ($user->role) {
     $recentActivities = $this->getClientRecentActivities($user);
     $upcomingDeadlines = $this->getClientUpcomingDeadlines($user);
 
-    return view('client.dashboard', compact('projects', 'recentActivities', 'upcomingDeadlines'));
+    return view('Client.dashboard', compact('projects', 'recentActivities', 'upcomingDeadlines'));
 }
 
   private function getClientRecentActivities($user)

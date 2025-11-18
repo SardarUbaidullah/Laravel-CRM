@@ -285,6 +285,12 @@ Route::prefix('manager')
    Route::get('/projects/create', [ManagerProjectController::class, 'create'])->name('projects.create');
     Route::post('/projects', [ManagerProjectController::class, 'store'])->name('projects.store');
     Route::get('/projects', [ManagerProjectController::class, 'index'])->name('projects.index');
+    Route::get('/projects/edit/{id}', [ManagerProjectController::class, 'edit'])->name('projects.edit');    
+Route::put('/projects/update/{id}', [ManagerProjectController::class, 'update'])->name('projects.update');    
+Route::get('/projects/delete/{id}', [ManagerProjectController::class, 'destroy'])->name('projects.destroy');
+
+
+
     Route::get('/projects/{id}', [ManagerProjectController::class, 'show'])->name('projects.show');
 Route::resource('milestones', MilestoneController::class);
 

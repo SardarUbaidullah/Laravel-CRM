@@ -22,7 +22,7 @@ class CalendarController extends Controller
             'projects_count' => $projects->count()
         ]);
 
-        return view('Manager.calendar.index', compact('projects'));
+        return view('manager.calendar.index', compact('projects'));
     }
 
     public function getEvents(Request $request)

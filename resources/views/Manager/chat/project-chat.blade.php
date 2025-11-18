@@ -217,7 +217,7 @@
                                     </p>
                                 </div>
                             </div>
-                            <div class="flex items-center space-x-3">
+                            <div class="flex items-center space-x-3" style="display:none;">
                                 <button class="w-10 h-10 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl flex items-center justify-center text-white transition-all duration-200 hover:scale-110 shadow-md">
                                     <i class="fas fa-phone-alt text-sm"></i>
                                 </button>

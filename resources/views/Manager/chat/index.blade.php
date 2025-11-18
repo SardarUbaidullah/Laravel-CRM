@@ -2,7 +2,7 @@
 @php
     $layout = match(Auth::user()->role) {
         'super_admin' => 'admin.layouts.app',
-        'admin' => 'Manager.layouts.app',
+        'admin' => 'manager.layouts.app',
         'user' => 'team.app',
     };
 @endphp

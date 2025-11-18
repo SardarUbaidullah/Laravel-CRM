@@ -303,7 +303,7 @@
                             <i class="fas fa-clock text-primary"></i>
                         </div>
                         <div class="text-right">
-                            <div class="text-lg font-bold text-black">{{ \App\Models\Timelog::count() }}</div>
+                            <div class="text-lg font-bold text-black">{{ \App\Models\TimeLog::count() }}</div>
                             <div class="flex items-center space-x-1 text-xs text-primary">
                                 <i class="fas fa-arrow-up text-xs"></i>
                                 <span>logs</span>

@@ -1,4 +1,4 @@
-@extends("Manager.layouts.app")
+@extends("manager.layouts.app")
 
 @section("content")
 <div class="max-w-7xl mx-auto px-4 py-8">
